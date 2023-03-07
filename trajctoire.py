@@ -67,6 +67,8 @@ class Vec :
         return f"P({self.x},{self.y},{self.z})"
 
 
+def center (): 
+    pass
 
 
 
