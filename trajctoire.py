@@ -15,9 +15,9 @@ class Point :       #creation de point pour chaque mesure
     def __init__(self,x,y,z,gx,gy,gz,vx,vy,vz):
 
         self.__class__.point.append(self)       #pour les ajouter a la liste
-        self.x = x      #postion
+        self.x = x      #position
         self.y = y
-        self.z = z      
+        self.z = z
         self.gx = gx        #postion angulaire dans l'espace
         self.gy = gy
         self.gz = gz
@@ -67,12 +67,31 @@ class Vec :
         return f"P({self.x},{self.y},{self.z})"
 
 
-def center (): 
+def base():        #point de base
+    point0 = Point(0, 0, 0, gx, gy, gz, 0, 0, 0)        #le faite que l'acceleration et la vitesse soie a 0 signifie que je dois commencer ma mesure immobile
+
+def nextacc():     #prochain point accelerometre gyroscope
+    pass
+
+
+def nextgps():     #verification + plus tard regrouper avecc accelerometre et gyro
+    pass
+
+
+def main():
     pass
 
 
 
 
+
+
+
+
+
+if __name__ == '__main__':
+
+    main()
 
 
 
