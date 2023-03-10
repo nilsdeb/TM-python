@@ -111,6 +111,7 @@ def nextacc():     #prochain point accelerometre gyroscope   graviter comment fa
     accel = Vec(Accx[ndp],Accy[ndp],Accz[ndp])      #vecteur brut des donnée d'accelerometre
     norme = norme(accel)
     ang = angle(acce, norme)
+    ang2 = ang-angledif #compense la rotation du capteur sur l'acceleration
 
 def nextgps():     #verification + plus tard regrouper avecc accelerometre et gyro
     pass
