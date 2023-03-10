@@ -1,10 +1,26 @@
 import math as m
 
 
-
 # position "0" en vitesse, accelereation, position 0 de gps, vecteur acceleration, vecteur du gps(attention 2d) => changement one step => postion un => loop
 # position gps confirme celle des accelerometre et gyro
 
+
+
+Accx = ()       # liste accelerometre
+
+Accy = ()
+
+Accz = ()
+
+Girx = ()       #liste gyroscope
+
+Giry = ()
+
+Girz = ()
+
+Long = ()       #coordonnée gps
+
+Lati = ()
 
 
 
@@ -68,10 +84,12 @@ class Vec :
 
 
 def base():        #point de base
-    point0 = Point(0, 0, 0, gx, gy, gz, 0, 0, 0)        #le faite que l'acceleration et la vitesse soie a 0 signifie que je dois commencer ma mesure immobile
+    point0 = Point(0, 0, 0, 0, 0, 0, 0, 0, 0)        #le faite que l'acceleration et la vitesse soie a 0 signifie que je dois commencer ma mesure immobile
 
-def nextacc():     #prochain point accelerometre gyroscope
-    pass
+def nextacc():     #prochain point accelerometre gyroscope   graviter comment faire?
+    ndp = len(Point.point)       #nombre de point, len commence a 1 vu que il y a le point de base
+    angle = ()
+    
 
 
 def nextgps():     #verification + plus tard regrouper avecc accelerometre et gyro
@@ -79,7 +97,9 @@ def nextgps():     #verification + plus tard regrouper avecc accelerometre et gy
 
 
 def main():
-    pass
+    base()
+    nextacc()
+
 
 
 
