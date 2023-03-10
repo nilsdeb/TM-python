@@ -107,8 +107,10 @@ def base():        #point de base
 
 def nextacc():     #prochain point accelerometre gyroscope   graviter comment faire?
     ndp = len(Point.point)       #nombre de point, len commence a 1 vu que il y a le point de base
-    angleplat = Ang(Girx[ndp]-girx0-Girx[ndp-1],Giry[ndp]-giry0-Giry[ndp-1],Girz[ndp]-girz0-Girz[ndp-1])   #angle corriger pour l'inclinaison du capteur
-
+    angledif = Ang(Girx[ndp]-girx0-Girx[ndp-1],Giry[ndp]-giry0-Giry[ndp-1],Girz[ndp]-girz0-Girz[ndp-1])   #corresction d'angle par raport a la mesure d'avant
+    accel = Vec(Accx[ndp],Accy[ndp],Accz[ndp])      #vecteur brut des donnée d'accelerometre
+    norme = norme(accel)
+    ang = angle(acce, norme)
 
 def nextgps():     #verification + plus tard regrouper avecc accelerometre et gyro
     pass
