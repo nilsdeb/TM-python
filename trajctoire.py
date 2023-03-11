@@ -34,18 +34,18 @@ class Point :       #creation de point pour chaque mesure
 
     point = []      #liste des points pour pouvoir les compter
 
-    def __init__(self,x,y,z,gx,gy,gz,vx,vy,vz):
+    def __init__(self,Vec,Ang,Vecv):    #Vec = vec acceleration/ Vecv = vec vitesse
 
         self.__class__.point.append(self)       #pour les ajouter a la liste
-        self.x = x      #position
-        self.y = y
-        self.z = z
-        self.gx = gx        #postion angulaire dans l'espace
-        self.gy = gy
-        self.gz = gz
-        self.vx = vx        #vitesse a se point
-        self.vy = vy
-        self.vz = vz
+        self.x = Vec.x      #position
+        self.y = Vec.y
+        self.z = Vec.z
+        self.gx = Ang.x        #postion angulaire dans l'espace
+        self.gy = Ang.y
+        self.gz = Ang.z
+        self.vx = Vecv.x       #vitesse a se point
+        self.vy = Vecv.y
+        self.vz = Vecv.z
 
     def __str__(self):      #pour print
         return f"P({self.x},{self.y},{self.z},{self.gx},{self.gy},{self.gz},{self.vx},{self.vy},{self.vz})"
@@ -102,8 +102,11 @@ class Vec :
         return f"P({self.x},{self.y},{self.z})"
 
 
-def base():        #point de base
-    point0 = Point(0, 0, 0, 0, 0, 0, 0, 0, 0)        #le faite que l'acceleration et la vitesse soie a 0 signifie que je dois commencer ma mesure immobile et avec un angle le plus plat possible
+def base():     #point de base
+    acc0 = Vec(0, 0, 0)
+    vit0 = Vec(0, 0, 0)     
+    ang0 = Ang(0, 0, 0)
+    point0 = Point(acc0,vit0,ang0)        #le faite que l'acceleration et la vitesse soie a 0 signifie que je dois commencer ma mesure immobile et avec un angle le plus plat possible
 
 def nextacc():     #prochain point accelerometre gyroscope   graviter comment faire?
     ndp = len(Point.point)       #nombre de point, len commence a 1 vu que il y a le point de base
@@ -113,7 +116,8 @@ def nextacc():     #prochain point accelerometre gyroscope   graviter comment fa
     ang = Vec.angle(accel, norme)
     ang2 = ang-angledif   #compense la rotation du capteur sur l'acceleration
     newvec = Vec.retangle(ang2, norme)   #vecteur force corriger
-    print(accel, newvec)
+    print(newvec)
+
 
 
 
@@ -123,6 +127,11 @@ def nextgps():     #verification + plus tard regrouper avecc accelerometre et gy
 
 def main():
     base()
+    nextacc()
+    nextacc()
+    nextacc()
+    nextacc()
+
 
 
 
