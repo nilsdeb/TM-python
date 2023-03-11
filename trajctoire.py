@@ -4,7 +4,7 @@ import math as m
 # position "0" en vitesse, accelereation, position 0 de gps, vecteur acceleration, vecteur du gps(attention 2d) => changement one step => postion un => loop
 # position gps confirme celle des accelerometre et gyro
 
-
+temp = 0.25     #en seconde
 
 Accx = (1,2,3,4,5,6)       # liste accelerometre
 
@@ -22,11 +22,7 @@ Long = (1,2,3,4,5,6)       #coordonnée gps
 
 Lati = (1,2,3,4,5,6)
 
-girx0 = Girx[0]   #pour avoir l'angle de base qui mets a 0 tout les gyro
-
-giry0 = Giry[0]
-
-girz0 = Girz[0]
+gir0 = Ang(0,0,0)  #pour avoir l'angle de base qui mets a 0 tout les gyro
 
 incplat = ()    #angle en fonction du temp du plateau de mesure
 
@@ -51,19 +47,20 @@ class Point :       #creation de point pour chaque mesure
         return f"P({self.x},{self.y},{self.z},{self.gx},{self.gy},{self.gz},{self.vx},{self.vy},{self.vz})"
 
 class Ang :
+
+    angle = []
+
     def __init__(self,x,y,z):
+        self.__class__.angle.append(self)       #pour les ajouter a la liste
         self.x = x
         self.y = y
         self.z = z
 
     def __add__(self,other):
-        return Vec(self.x+other.x, self.y+other.y, self.z+other.z)
+        return Ang(self.x+other.x, self.y+other.y, self.z+other.z)
 
     def __sub__(self,other):
-        return Vec(self.x-other.x, self.y-other.y, self.z-other.z)
-
-
-    
+        return Ang(self.x-other.x, self.y-other.y, self.z-other.z)
 
 
 class Vec :
@@ -85,6 +82,12 @@ class Vec :
         y = m.cos(Ang.y)*normeself
         z = m.cos(Ang.z)*normeself
         return Vec(x,y,z)       #redonne un vecteur
+
+    def horaire (self,point,ang):    #applique equa horaire
+        vecp = Vec(1/2*self.x*temp**2 + point.vx*temp + point.x, 1/2*self.x*temp**2 + point.vy*temp + point.y, 1/2*self.x*temp**2 + point.vz*temp + point.z)
+        vecv = Vec(self.x*temp + point.vx, self.y*temp + point.vy, self.z*temp + point.vz)
+        return Point(vecp, ang, vecv)
+
 
     def __add__(self,other):
         return Vec(self.x+other.x, self.y+other.y, self.z+other.z)
@@ -110,13 +113,15 @@ def base():     #point de base
 
 def nextacc():     #prochain point accelerometre gyroscope   graviter comment faire?
     ndp = len(Point.point)       #nombre de point, len commence a 1 vu que il y a le point de base
-    angledif = Ang(Girx[ndp]-girx0-Girx[ndp-1],Giry[ndp]-giry0-Giry[ndp-1],Girz[ndp]-girz0-Girz[ndp-1])   #corresction d'angle par raport a la mesure d'avant
+    angledif = Ang(Girx[ndp]-Girx[ndp-1],Giry[ndp]-Giry[ndp-1],Girz[ndp]-Girz[ndp-1])-gir0  #corresction d'angle par raport a la mesure d'avant
     accel = Vec(Accx[ndp],Accy[ndp],Accz[ndp])      #vecteur brut des donnée d'accelerometre
     norme = Vec.norme(accel)
     ang = Vec.angle(accel, norme)
     ang2 = ang-angledif   #compense la rotation du capteur sur l'acceleration
     newvec = Vec.retangle(ang2, norme)   #vecteur force corriger
-    print(newvec)
+
+
+    
 
 
 
