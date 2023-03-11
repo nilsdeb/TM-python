@@ -22,9 +22,9 @@ Long = (1,2,3,4,5,6)       #coordonnée gps
 
 Lati = (1,2,3,4,5,6)
 
-gir0 = Ang(0,0,0)  #pour avoir l'angle de base qui mets a 0 tout les gyro
+gir0 = Ang(girx[0],giry[0],girz[0])  #pour avoir l'angle de base qui mets a 0 tout les gyro
 
-incplat = ()    #angle en fonction du temp du plateau de mesure
+incplat = []   #angle en fonction du temp du plateau de mesure
 
 class Point :       #creation de point pour chaque mesure
 
@@ -119,6 +119,7 @@ def nextacc():     #prochain point accelerometre gyroscope   graviter comment fa
     ang = Vec.angle(accel, norme)
     ang2 = ang-angledif   #compense la rotation du capteur sur l'acceleration
     newvec = Vec.retangle(ang2, norme)   #vecteur force corriger
+    #comment chercher l'angle du point d'avant?
 
 
     
