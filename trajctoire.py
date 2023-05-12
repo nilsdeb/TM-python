@@ -1,8 +1,8 @@
 import math as m
 
 
-# position "0" en vitesse, accelereation, position 0 de gps, vecteur acceleration, vecteur du gps(attention 2d) => changement one step => postion un => loop
-# position gps confirme celle des accelerometre et gyro
+# position "0" en vitesse, accelereation, position 0 de gps, vecteur acceleration => changement one step => postion un => loop
+# position gps confirme celle des accelerometre et gyro / temoin
 
 temp = 0.25     #en seconde
 
@@ -18,11 +18,6 @@ Giry = (1,2,3,4,5,6)
 
 Girz = (1,2,3,4,5,6)
 
-Long = (1,2,3,4,5,6)       #coordonnée gps
-
-Lati = (1,2,3,4,5,6)
-
-gir0 = Ang(girx[0],giry[0],girz[0])  #pour avoir l'angle de base qui mets a 0 tout les gyro
 
 incplat = []   #angle en fonction du temp du plateau de mesure
 
@@ -36,12 +31,13 @@ class Point :       #creation de point pour chaque mesure
         self.x = Vec.x      #position
         self.y = Vec.y
         self.z = Vec.z
-        self.gx = Ang.x        #postion angulaire dans l'espace
-        self.gy = Ang.y
-        self.gz = Ang.z
         self.vx = Vecv.x       #vitesse a se point
         self.vy = Vecv.y
         self.vz = Vecv.z
+        self.gx = Ang.x        #postion angulaire dans l'espace
+        self.gy = Ang.y
+        self.gz = Ang.z
+        
 
     def __str__(self):      #pour print
         return f"P({self.x},{self.y},{self.z},{self.gx},{self.gy},{self.gz},{self.vx},{self.vy},{self.vz})"
