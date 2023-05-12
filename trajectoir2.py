@@ -43,14 +43,31 @@ class Point :       #point de chaque prise de données
 
     point = [] #liste de tout les point cree
 
-    def __init__(self,Vecr,Vecv,Vect,Veco):     #Vecr = vec de position // vecv = vec de vitesse // vect = vec position angulaire // vec0  = vec vitesse angulaire
+    def __init__(self,pos,vit,posang,vitang):     #pos = vec de position // vit = vec de vitesse // posang = vec position angulaire // vitang  = vec vitesse angulaire
         self.__class__.point.append(self)
-        self.r = Vecr   #r pour r(t)...
-        self.v = Vecv   #v pour v(t)...
-        self.t = Vect   #t pour theta(t)...
-        self.o = Veco   #o pour omega(t)...
+        self.r = pos   #r pour r(t)...
+        self.v = vit   #v pour v(t)...
+        self.t = posang   #t pour theta(t)...
+        self.o = vitang   #o pour omega(t)...
 
     def __str__(self):  #print
-        return f"P = ({self.r},{self.v},{self.t},{self.o},)"
+        return f"P = (position : {self.r}, vitesse : {self.v}, pos angulaire : {self.t}, vitesse ang : {self.o},)"
 
-        
+
+
+def main():
+    vec = Vec(1, 2, 2)
+    point = Point(vec, vec, vec, vec)
+    print(point)
+    print(len(Point.point))
+
+
+
+
+
+
+
+
+if __name__ == '__main__':
+
+    main()
