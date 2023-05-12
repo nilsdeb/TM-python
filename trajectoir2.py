@@ -26,13 +26,14 @@ class Vec :     #code vecteurs 3d et ces operations : vecteurs d'angle compris
     def __str__(self):      #pour print
         return f"Vec = ({self.x},{self.y},{self.z})"
 
+    def matrice (self, a) :     #multiplication d'un vecteur par une matrice de rotation (les angles sont donner par un angle de rotation) a = vecteur angle
 
+        xp = self.x*(m.cos(a.y)*m.cos(a.z))+self.y*(m.sin(a.x)*m.sin(a.y)*m.cos(a.z)-m.cos(a.x)*m.sin(a.z))+self.z*(m.cos(a.x)*m.sin(a.y)*m.cos(a.z)+m.cos(a.x)*m.sin(a.z))
+        yp = self.x*(m.cos(a.y)*m.cos(a.z))+self.y*(m.sin(a.x)*m.sin(a.y)*m.cos(a.z)+m.cos(a.x)*m.sin(a.z))+self.z*(m.cos(a.x)*m.sin(a.y)*m.cos(a.z)-m.cos(a.x)*m.sin(a.z))
+        zp = -self.x*(m.sin(a.y))+self.y*(m.sin(a.x)*m.cos(a.y))+self.z*(m.cos(a.x)*m.cos(a.y))
 
+        return Vec(xp,yp,zp)
 
-
-
-class Matrice :     # plus simple que une fonction
-    pass
 
 
 
@@ -43,12 +44,12 @@ class Point :       #point de chaque prise de données
 
     point = [] #liste de tout les point cree
 
-    def __init__(self,pos,vit,posang,vitang):     #pos = vec de position // vit = vec de vitesse // posang = vec position angulaire // vitang  = vec vitesse angulaire
+    def __init__(self,r,v,t,o):     #r = vec de position // v = vec de vitesse // t = vec position angulaire // o  = vec vitesse angulaire
         self.__class__.point.append(self)
-        self.r = pos   #r pour r(t)...
-        self.v = vit   #v pour v(t)...
-        self.t = posang   #t pour theta(t)...
-        self.o = vitang   #o pour omega(t)...
+        self.r = r   #r pour r(t)...
+        self.v = v   #v pour v(t)...
+        self.t = t   #t pour theta(t)...
+        self.o = o   #o pour omega(t)...
 
     def __str__(self):  #print
         return f"P = (position : {self.r}, vitesse : {self.v}, pos angulaire : {self.t}, vitesse ang : {self.o},)"
@@ -56,8 +57,10 @@ class Point :       #point de chaque prise de données
 
 
 def main():
-    vec = Vec(1, 2, 2)
-    point = Point(vec, vec, vec, vec)
+    vec = Vec(5,4,3)
+    a  = Vec(m.pi/2,m.pi/2,m.pi/2)
+    vac= vec.matrice(a)
+    point = Point(vac, vac, vac, vac)
     print(point)
     print(len(Point.point))
 
