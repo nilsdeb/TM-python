@@ -2,7 +2,7 @@ import math as m
 
 
 
-
+t = 0.04    #temp entre chaque mesure des acceleration utiliser dans step
 
 class Vec :     #code vecteurs 3d et ces operations : vecteurs d'angle compris
 
@@ -21,7 +21,7 @@ class Vec :     #code vecteurs 3d et ces operations : vecteurs d'angle compris
         return Vec(self.x*x, self.y*x, self.z*x)
 
     def __truediv__(self,x):    #division
-        return Vec(self.x/x, self.y/x, self.z/zx)
+        return Vec(self.x/x, self.y/x, self.z/x)
 
     def __str__(self):      #pour print
         return f"Vec = ({self.x},{self.y},{self.z})"
@@ -51,8 +51,19 @@ class Point :       #point de chaque prise de données
         self.t = t   #t pour theta(t)...
         self.o = o   #o pour omega(t)...
 
+
+    def step (self, a, al):     #a pour acceleration // al pour alpha    le but est de cree n+1 aves les donné de n et les accelerations
+        nr = a/2*t*t + self.v*t + self.r    #equation horaire // ne peux pas mettre t^2 histoir de int et float
+        nv = a*t + self.v
+        nt = al/2*t*t + self.o*t + self.t
+        no = al*t + self.o
+        return Point(nr, nv, nt, no)
+
     def __str__(self):  #print
         return f"P = (position : {self.r}, vitesse : {self.v}, pos angulaire : {self.t}, vitesse ang : {self.o},)"
+
+
+
 
 
 
@@ -63,6 +74,8 @@ def main():
     point = Point(vac, vac, vac, vac)
     print(point)
     print(len(Point.point))
+    point.step(vec, vec)
+    print(Point.point[1])
 
 
 
