@@ -3,6 +3,7 @@ import math as m
 
 
 t = 0.04    #temp entre chaque mesure des acceleration utiliser dans step
+n = 0    #defini combien de position on a calculer
 
 class Vec :     #code vecteurs 3d et ces operations : vecteurs d'angle compris
 
@@ -24,7 +25,7 @@ class Vec :     #code vecteurs 3d et ces operations : vecteurs d'angle compris
         return Vec(self.x/x, self.y/x, self.z/x)
 
     def __str__(self):      #pour print
-        return f"Vec = ({self.x},{self.y},{self.z})"
+        return f"({self.x},{self.y},{self.z})"
 
     def matrice (self, a) :     #multiplication d'un vecteur par une matrice de rotation (les angles sont donner par un angle de rotation) a = vecteur angle
 
@@ -46,24 +47,33 @@ class Point :       #point de chaque prise de données
 
     def __init__(self,r,v,t,o):     #r = vec de position // v = vec de vitesse // t = vec position angulaire // o  = vec vitesse angulaire
         self.__class__.point.append(self)
-        self.r = r   #r pour r(t)...
-        self.v = v   #v pour v(t)...
-        self.t = t   #t pour theta(t)...
-        self.o = o   #o pour omega(t)...
+        self.r = r   #r pour r(t)=...
+        self.v = v   #v pour v(t)=...
+        self.t = t   #t pour theta(t)=...
+        self.o = o   #o pour omega(t)=...
 
 
     def step (self, a, al):     #a pour acceleration // al pour alpha    le but est de cree n+1 aves les donné de n et les accelerations
-        nr = a/2*t*t + self.v*t + self.r    #equation horaire // ne peux pas mettre t^2 histoir de int et float
+        nr = a/2*t*t + self.v*t + self.r    #equation horaire // ne peux pas mettre t^2 beug de int et float
         nv = a*t + self.v
         nt = al/2*t*t + self.o*t + self.t
         no = al*t + self.o
         return Point(nr, nv, nt, no)
 
     def __str__(self):  #print
-        return f"P = (position : {self.r}, vitesse : {self.v}, pos angulaire : {self.t}, vitesse ang : {self.o},)"
+        return f"Point = position : {self.r}, vitesse : {self.v}, pos angulaire : {self.t}, vitesse ang : {self.o}"
 
 
 
+
+
+
+def nextp (p0, a, al):  #p0 pour le point de base // a pour acceleration // al pour alpha
+
+    a1 = a.matrice(p0.t)   #a1 et l'image de a dans le referentiel unique
+    al1 = al.matrice(p0.t)    #al1 et l'image de al dans le referentiel unique
+    p1 = p0.step(a1, al1)   #p1 et le point n+1, le pas de récurence est construit
+    
 
 
 
@@ -74,8 +84,14 @@ def main():
     point = Point(vac, vac, vac, vac)
     print(point)
     print(len(Point.point))
+
+
     point.step(vec, vec)
     print(Point.point[1])
+
+        #regarder quelle forme prenne les mesure pour ecrire la boucle
+
+
 
 
 
