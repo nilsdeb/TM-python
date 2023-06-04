@@ -27,13 +27,23 @@ class Vec :     #code vecteurs 3d et ces operations : vecteurs d'angle compris
     def __str__(self):      #pour print
         return f"({self.x},{self.y},{self.z})"
 
-    def matrice (self, a) :     #multiplication d'un vecteur par une matrice de rotation (les angles sont donner par un angle de rotation) a = vecteur angle
+    def moins (self):       #exemple a = -a, sers pour inverser les angles avant la matrice
+        return Vec(-self.x,-self.y,-self.z)
 
-        xp = self.x*(m.cos(a.y)*m.cos(a.z))+self.y*(m.sin(a.x)*m.sin(a.y)*m.cos(a.z)-m.cos(a.x)*m.sin(a.z))+self.z*(m.cos(a.x)*m.sin(a.y)*m.cos(a.z)+m.cos(a.x)*m.sin(a.z))
-        yp = self.x*(m.cos(a.y)*m.cos(a.z))+self.y*(m.sin(a.x)*m.sin(a.y)*m.cos(a.z)+m.cos(a.x)*m.sin(a.z))+self.z*(m.cos(a.x)*m.sin(a.y)*m.cos(a.z)-m.cos(a.x)*m.sin(a.z))
-        zp = -self.x*(m.sin(a.y))+self.y*(m.sin(a.x)*m.cos(a.y))+self.z*(m.cos(a.x)*m.cos(a.y))
+    def matrice (self, a) :     #a = vecteur angle  multiplication d'un vecteur par une matrice de rotation (les angles sont donner par un angle de rotation) le plus simple est de faire matrice axe x ensuite matrice axe y ... 
 
-        return Vec(xp,yp,zp)
+        x1 = self.x     # matrice x
+        y1 = self.y * m.cos(a.x) - self.z * m.sin(a.x)     # matrice x
+        z1 = self.y * m.sin(a.x) + self.z * m.cos(a.x)     # matrice x
+        x2 = x1 * m.cos(a.y) + z1 * m.sin(a.y)     # matrice y
+        y2 = y1     # matrice y
+        z2 = - x1 * m.sin(a.y) + z1 * m.cos(a.y)     # matrice y
+        x3 = x2 * m.cos(a.z) - y2 * m.sin(a.z)     # matrice z
+        y3 = x2 * m.sin(a.z) + y2 * m.cos(a.z)     # matrice z
+        z3 = z2     # matrice z
+    
+
+        return Vec(x3, y3, z3)
 
 
 
@@ -45,49 +55,40 @@ class Point :       #point de chaque prise de données
 
     point = [] #liste de tout les point cree
 
-    def __init__(self,r,v,t,o):     #r = vec de position // v = vec de vitesse // t = vec position angulaire // o  = vec vitesse angulaire
+    def __init__(self,r,v,t):     #r = vec de position // v = vec de vitesse // t = vec position angulaire
         self.__class__.point.append(self)
         self.r = r   #r pour r(t)=...
         self.v = v   #v pour v(t)=...
         self.t = t   #t pour theta(t)=...
-        self.o = o   #o pour omega(t)=...
 
 
-    def step (self, a, al):     #a pour acceleration // al pour alpha    le but est de cree n+1 aves les donné de n et les accelerations
-        nr = a/2*t*t + self.v*t + self.r    #equation horaire // ne peux pas mettre t^2 beug de int et float
-        nv = a*t + self.v
-        nt = al/2*t*t + self.o*t + self.t
-        no = al*t + self.o
-        return Point(nr, nv, nt, no)
+
+    def step (self, a, o):     #a pour acceleration // o pour omega    le but est de cree n+1 aves les donné de n et les accelerations
+        nt = o*t + self.t       #nt = nouveau theta     cration de theta.n+1
+        mnt = nt.moins      #mnt pour moins nouveau theta       renverse les angle pour avoir -alpha, -beta, -gamma
+        a1 = a.matrice(mnt)      #a1 = image de l'acceleration de l'imu dans le referentiel unique
+        nr = a1/2*t*t + self.v*t + self.r    #nr = nouvelle position    equation horaire // ne peux pas mettre t^2 beug de int et float
+        nv = a1*t + self.v      #nv = nouvelle vitesse  equation horaire pour la vitesse
+        return Point(nr, nv, nt)        #retourne le point d'apres  le pas de recurrence est construit
 
     def __str__(self):  #print
-        return f"Point = position : {self.r}, vitesse : {self.v}, pos angulaire : {self.t}, vitesse ang : {self.o}"
+        return f"Point = position : {self.r}, vitesse : {self.v}, pos angulaire : {self.t}"
 
 
 
 
 
 
-def nextp (p0, a, al):  #p0 pour le point de base // a pour acceleration // al pour alpha
 
-    a1 = a.matrice(p0.t)   #a1 et l'image de a dans le referentiel unique
-    al1 = al.matrice(p0.t)    #al1 et l'image de al dans le referentiel unique
-    p1 = p0.step(a1, al1)   #p1 et le point n+1, le pas de récurence est construit
-    
 
 
 
 def main():
-    vec = Vec(5,4,3)
-    a  = Vec(m.pi/2,m.pi/2,m.pi/2)
-    vac= vec.matrice(a)
-    point = Point(vac, vac, vac, vac)
-    print(point)
-    print(len(Point.point))
+    e1 = Vec(0,0,1)
+    a  = Vec(0,0,1)        #z,y,x
+    e11 = e1.matrice(a)
+    print(e11)
 
-
-    point.step(vec, vec)
-    print(Point.point[1])
 
         #regarder quelle forme prenne les mesure pour ecrire la boucle
 
