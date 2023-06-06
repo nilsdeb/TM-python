@@ -66,7 +66,7 @@ class Point :       #point de chaque prise de données
 
 
 
-        
+
     def step (self, a, o):     #a pour acceleration // o pour omega    le but est de cree n+1 aves les donné de n et les accelerations
         nt = o*t + self.t       #nt = nouveau theta     cration de theta.n+1
         #mnt = nt.moins      #mnt pour moins nouveau theta       renverse les angle pour avoir -alpha, -beta, -gamma
@@ -90,9 +90,9 @@ class Point :       #point de chaque prise de données
 def main():
     r0 = Vec(4, 5, 6)
     v0 = Vec(7 , 8, 9)
-    t0 = Vec(0,0,0)
+    t0 = Vec(10,11,12)
     base = Point(r0, v0, t0)
-    o1 = Vec(0,0,0)
+    o1 = Vec(13,14,15)
     a1 = Vec(1,2,3)
     step1 = base.step(a1, o1)
     print(step1)
