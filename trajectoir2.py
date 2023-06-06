@@ -2,7 +2,7 @@ import math as m
 
 
 
-t = 0.04    #temp entre chaque mesure des acceleration utiliser dans step
+t = 0.5    #temp entre chaque mesure des acceleration utiliser dans step
 n = 0    #defini combien de position on a calculer
 
 class Vec :     #code vecteurs 3d et ces operations : vecteurs d'angle compris
@@ -62,12 +62,16 @@ class Point :       #point de chaque prise de données
         self.t = t   #t pour theta(t)=...
 
 
+        ##################################    test de step   #####################################
 
+
+
+        
     def step (self, a, o):     #a pour acceleration // o pour omega    le but est de cree n+1 aves les donné de n et les accelerations
         nt = o*t + self.t       #nt = nouveau theta     cration de theta.n+1
-        mnt = nt.moins      #mnt pour moins nouveau theta       renverse les angle pour avoir -alpha, -beta, -gamma
-        a1 = a.matrice(mnt)      #a1 = image de l'acceleration de l'imu dans le referentiel unique
-        nr = a1/2*t*t + self.v*t + self.r    #nr = nouvelle position    equation horaire // ne peux pas mettre t^2 beug de int et float
+        #mnt = nt.moins      #mnt pour moins nouveau theta       renverse les angle pour avoir -alpha, -beta, -gamma
+        a1 = a#.matrice(mnt)      #a1 = image de l'acceleration de l'imu dans le referentiel unique
+        nr = a1*1/2*t*t + self.v*t + self.r    #nr = nouvelle position    equation horaire // ne peux pas mettre t^2 beug de int et float
         nv = a1*t + self.v      #nv = nouvelle vitesse  equation horaire pour la vitesse
         return Point(nr, nv, nt)        #retourne le point d'apres  le pas de recurrence est construit
 
@@ -84,13 +88,15 @@ class Point :       #point de chaque prise de données
 
 
 def main():
-    e1 = Vec(0,0,1)
-    a  = Vec(0,0,1)        #z,y,x
-    e11 = e1.matrice(a)
-    print(e11)
+    r0 = Vec(4, 5, 6)
+    v0 = Vec(7 , 8, 9)
+    t0 = Vec(0,0,0)
+    base = Point(r0, v0, t0)
+    o1 = Vec(0,0,0)
+    a1 = Vec(1,2,3)
+    step1 = base.step(a1, o1)
+    print(step1)
 
-
-        #regarder quelle forme prenne les mesure pour ecrire la boucle
 
 
 
