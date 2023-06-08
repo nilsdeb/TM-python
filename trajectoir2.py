@@ -27,19 +27,20 @@ class Vec :     #code vecteurs 3d et ces operations : vecteurs d'angle compris
     def __str__(self):      #pour print
         return f"({self.x},{self.y},{self.z})"
 
-    def moins (self):       #exemple a = -a, sers pour inverser les angles avant la matrice
-        return Vec(-self.x,-self.y,-self.z)
+    def norme (self):
+        return  m.sqrt(self.x*self.x+self.y*self.y+self.z*self.z)
+
 
     def matrice (self, a) :     #a = vecteur angle  multiplication d'un vecteur par une matrice de rotation (les angles sont donner par un angle de rotation) le plus simple est de faire matrice axe x ensuite matrice axe y ... 
 
         x1 = self.x     # matrice x
-        y1 = self.y * m.cos(a.x) - self.z * m.sin(a.x)     # matrice x
-        z1 = self.y * m.sin(a.x) + self.z * m.cos(a.x)     # matrice x
-        x2 = x1 * m.cos(a.y) + z1 * m.sin(a.y)     # matrice y
+        y1 = self.y * m.cos(-a.x) - self.z * m.sin(-a.x)     # matrice x        - devant tout les angle parce que les matrices sont R(-alpha)+...
+        z1 = self.y * m.sin(-a.x) + self.z * m.cos(-a.x)     # matrice x
+        x2 = x1 * m.cos(-a.y) + z1 * m.sin(-a.y)     # matrice y
         y2 = y1     # matrice y
-        z2 = - x1 * m.sin(a.y) + z1 * m.cos(a.y)     # matrice y
-        x3 = x2 * m.cos(a.z) - y2 * m.sin(a.z)     # matrice z
-        y3 = x2 * m.sin(a.z) + y2 * m.cos(a.z)     # matrice z
+        z2 = - x1 * m.sin(-a.y) + z1 * m.cos(-a.y)     # matrice y
+        x3 = x2 * m.cos(-a.z) - y2 * m.sin(-a.z)     # matrice z
+        y3 = x2 * m.sin(-a.z) + y2 * m.cos(-a.z)     # matrice z
         z3 = z2     # matrice z
     
 
@@ -62,15 +63,15 @@ class Point :       #point de chaque prise de données
         self.t = t   #t pour theta(t)=...
 
 
-        ##################################    test de step   #####################################
 
 
 
 
     def step (self, a, o):     #a pour acceleration // o pour omega    le but est de cree n+1 aves les donné de n et les accelerations
         nt = o*t + self.t       #nt = nouveau theta     cration de theta.n+1
-        #mnt = nt.moins      #mnt pour moins nouveau theta       renverse les angle pour avoir -alpha, -beta, -gamma
-        a1 = a#.matrice(mnt)      #a1 = image de l'acceleration de l'imu dans le referentiel unique
+        print(a.norme())
+        a1 = a.matrice(nt)      #a1 = image de l'acceleration de l'imu dans le referentiel unique
+        print(a1.norme())
         nr = a1*1/2*t*t + self.v*t + self.r    #nr = nouvelle position    equation horaire // ne peux pas mettre t^2 beug de int et float
         nv = a1*t + self.v      #nv = nouvelle vitesse  equation horaire pour la vitesse
         return Point(nr, nv, nt)        #retourne le point d'apres  le pas de recurrence est construit
@@ -80,22 +81,24 @@ class Point :       #point de chaque prise de données
 
 
 
-
-
-
-
-
-
-
 def main():
     r0 = Vec(4, 5, 6)
     v0 = Vec(7 , 8, 9)
-    t0 = Vec(10,11,12)
+    t0 = Vec(1,1,1)
     base = Point(r0, v0, t0)
-    o1 = Vec(13,14,15)
+    o1 = Vec(1,2,3)
     a1 = Vec(1,2,3)
     step1 = base.step(a1, o1)
-    print(step1)
+    #print(step1)
+    #print(step1.r.norme())
+
+
+
+    unit = Vec(9.4567,6.6324,3.6234)
+    angle = Vec(5,34,76)
+    nunit = unit.matrice(angle)
+    #print(unit, unit.norme())
+    #print(nunit, nunit.norme())
 
 
 
