@@ -28,10 +28,6 @@ resultatxzy = np.dot(np.dot(rotationx, rotationz), rotationy)
 
 vecteur = (0,0,1)
 
-
-
-
-
 print(np.dot(resultatyxz, vecteur))
 print( )
 print(np.dot(resultatzxy, vecteur))
@@ -43,7 +39,8 @@ print( )
 print(np.dot(resultatyzx, vecteur))
 print( )
 print(np.dot(resultatxzy, vecteur))
-
+print( )
+print("comme l'ordre de multiplication des matrice change le resultat final, cette methodes est non utilisable")
 
 
 
