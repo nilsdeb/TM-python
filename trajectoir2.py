@@ -1,5 +1,5 @@
 import math as m
-
+import numpy as np      #pour les matrices
 
 
 t = 0.5    #temp entre chaque mesure des acceleration utiliser dans step
@@ -27,7 +27,7 @@ class Vec :     #code vecteurs 3d et ces operations : vecteurs d'angle compris
     def __str__(self):      #pour print
         return f"({self.x},{self.y},{self.z})"
 
-    def norme (self):
+    def norme (self):       #pour tester les matrice car norme a = norme a1
         return  m.sqrt(self.x*self.x+self.y*self.y+self.z*self.z)
 
 
@@ -42,7 +42,14 @@ class Vec :     #code vecteurs 3d et ces operations : vecteurs d'angle compris
         x3 = x2 * m.cos(-a.z) - y2 * m.sin(-a.z)     # matrice z
         y3 = x2 * m.sin(-a.z) + y2 * m.cos(-a.z)     # matrice z
         z3 = z2     # matrice z
-    
+        return Vec(x3, y3, z3)
+
+
+        
+
+    def matrice2 (self, a) :  # a = vecteur angle   multiplication autour axe total
+
+
 
         return Vec(x3, y3, z3)
 
