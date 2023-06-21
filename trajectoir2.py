@@ -22,6 +22,7 @@
 # de quoi pouvoir lire le dossier de l'arduino et en extraire les données
 # matrice de merde
 # toute la partie gps pour pouvoir comparer les resultats on a position et vitesse normalement
+# essayer d afficher les point de l'IMU sur la carte gps et les point j^gps pour pouvoir faire les comparatif
 #
 #
 # optimisation du code genre limitation de vitesse, de chaangement d'angle
