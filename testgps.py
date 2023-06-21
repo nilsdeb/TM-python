@@ -31,7 +31,7 @@ folium.Marker(location=[ref_gps_lat, ref_gps_lon], popup="Référence GPS").add_
 for point in relative_points_3d:
     gps_lat = ref_gps_lat + point.dx
     gps_lon = ref_gps_lon + point.dy
-    folium.Marker(location=[gps_lat, gps_lon, point.dz], popup=point.label, icon=folium.Icon(color='blue')).add_to(m)
+    folium.Marker(location=[gps_lat, gps_lon], popup=point.label, icon=folium.Icon(color='blue', icon='cube')).add_to(m)
 
 # Affichage de la carte avec le cluster de marqueurs
 marker_cluster = MarkerCluster().add_to(m)
