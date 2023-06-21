@@ -1,7 +1,24 @@
 
 import numpy as np      #pour les matrices
+
 t = 0.5    #temp entre chaque mesure des acceleration utiliser dans step
-n = 0    #defini combien de position on a calculer
+
+x_coords = []       #liste des position pour l'affichage graphique
+y_coords = []
+z_coords = []
+
+
+vx_velo = []        #liste des vitesse pour graph
+vy_velo = []
+vz_velo = []
+
+tx_coords = []       #liste des position angulaire pour graph / theta x....
+ty_coords = []
+tz_coords = []
+
+
+
+
 
 
 
@@ -29,6 +46,13 @@ class Vec :     #code vecteurs 3d et ces operations : vecteurs d'angle compris
     def norme (self):       #pour tester les matrice car norme a = norme a1
         return  np.sqrt(self.x*self.x+self.y*self.y+self.z*self.z)
 
+
+
+
+#######################################  a changer  ######################################################################################
+
+
+
     def matrice (self, a) :     #a = vecteur angle  multiplication d'un vecteur par une matrice de rotation (les angles sont donner par un angle de rotation) le plus simple est de faire matrice axe x ensuite matrice axe y ... 
         x1 = self.x     # matrice x
         y1 = self.y * np.cos(-a.x) - self.z * np.sin(-a.x)     # matrice x        - devant tout les angle parce que les matrices sont R(-alpha)+...
@@ -40,6 +64,9 @@ class Vec :     #code vecteurs 3d et ces operations : vecteurs d'angle compris
         y3 = x2 * np.sin(-a.z) + y2 * np.cos(-a.z)     # matrice z
         z3 = z2     # matrice z
         return Vec(x3, y3, z3)
+
+
+#######################################  a changer  ######################################################################################
         
 
 
@@ -53,14 +80,12 @@ class Point :       #point de chaque prise de données
         self.v = v   #v pour v(t)=...
         self.t = t   #t pour theta(t)=...
 
-    def step (self, a, o):     #a pour acceleration // o pour omega    le but est de cree n+1 aves les donné de n et les accelerations
-        nt = o*t + self.t       #nt = nouveau theta     cration de theta.n+1
-        print(a.norme())
-        a1 = a.matrice(nt)      #a1 = image de l'acceleration de l'imu dans le referentiel unique
-        print(a1.norme())
-        nr = a1*1/2*t*t + self.v*t + self.r    #nr = nouvelle position    equation horaire // ne peux pas mettre t^2 beug de int et float
-        nv = a1*t + self.v      #nv = nouvelle vitesse  equation horaire pour la vitesse
-        return Point(nr, nv, nt)        #retourne le point d'apres  le pas de recurrence est construit
+    def step (self, acc, omega):     #acc pour acceleration    le but est de cree n+1 aves les donné de n et les accelerations
+        new_t = omega*t + self.t       #new_t = nouveau theta     cration de theta.n+1
+        uni_acc = acc.matrice(nt)      #uni_acc = image de l'acceleration de l'imu dans le referentiel unique
+        new_r = uni_acc*1/2*t*t + self.v*t + self.r    #new_r = nouvelle position    equation horaire // ne peux pas mettre t^2 beug de int et float
+        new_v = uni_acc*t + self.v      #new_v = nouvelle vitesse  equation horaire pour la vitesse
+        return Point(new_r, new_v, new_t)        #retourne le point d'apres  le pas de recurrence est construit
 
 
     def __str__(self):  #print
@@ -69,6 +94,16 @@ class Point :       #point de chaque prise de données
 
 
 
+def graphics ():
+
+
+
+
+
+
+#premiere partie : sortire les info du fichier creer lpar l ardu
+#analyser ces fichier
+#afichage et conclusion..
 
 
 
