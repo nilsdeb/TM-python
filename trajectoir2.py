@@ -1,49 +1,95 @@
 
-import numpy as np      #pour les matrices
 
-t = 0.5    #temp entre chaque mesure des acceleration utiliser dans step
 
-x_coords = []       #liste des position pour l'affichage graphique
+
+
+#######################################  structure du code  ######################################################################################
+#
+#
+# package
+# liste et variable
+# class vecteur
+# class point
+# pas de recurence
+# extraction position et vitesse pour les listes pour le graphe
+# creation du graphe
+# main
+#
+#
+#######################################  a faire  ##############################################################################################
+#
+#
+# de quoi pouvoir lire le dossier de l'arduino et en extraire les données
+# matrice de merde
+# toute la partie gps pour pouvoir comparer les resultats on a position et vitesse normalement
+#
+#
+# optimisation du code genre limitation de vitesse, de chaangement d'angle
+#
+#
+#################################################################################################################################################
+
+
+
+
+
+
+
+
+# graphique
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+# pour les maths
+import numpy as np      
+
+# temp entre chaque mesure des acceleration utiliser dans step
+t = 0.5  
+
+# liste des position pour l'affichage graphique
+x_coords = []       
 y_coords = []
 z_coords = []
 
-
-vx_velo = []        #liste des vitesse pour graph
+# liste des vitesse pour graph
+vx_velo = []        
 vy_velo = []
 vz_velo = []
 
-tx_coords = []       #liste des position angulaire pour graph / theta x....
-ty_coords = []
-tz_coords = []
 
 
 
+# code vecteurs 3d et ces operations : vecteurs d'angle compris
+class Vec :     
 
-
-
-
-class Vec :     #code vecteurs 3d et ces operations : vecteurs d'angle compris
-    def __init__(self,x,y,z):   #defni quand on le cree
+    # defni quand on le cree
+    def __init__(self,x,y,z):   
         self.x = x
         self.y = y
         self.z = z
 
-    def __add__(self,other):    #addition
+    # addition
+    def __add__(self,other):
         return Vec(self.x + other.x, self.y + other.y, self.z + other.z)
 
-    def __sub__(self,other):    #soustraction
+    # soustraction
+    def __sub__(self,other):    
         return Vec(self.x - other.x, self.y - other.y, self.z - other.z)
 
-    def __mul__(self,x):    #multiplication
+    # multiplication
+    def __mul__(self,x):    
         return Vec(self.x * x, self.y * x, self.z * x)
 
-    def __truediv__(self,x):    #division
+    # division
+    def __truediv__(self,x):    
         return Vec(self.x / x, self.y / x, self.z / x)
 
-    def __str__(self):      #pour print
+    # pour print
+    def __str__(self):      
         return f"({self.x},{self.y},{self.z})"
 
-    def norme (self):       #pour tester les matrice car norme a = norme a1
+    # pour tester les matrice
+    def norme (self) :
         return  np.sqrt(self.x*self.x+self.y*self.y+self.z*self.z)
 
 
@@ -53,7 +99,7 @@ class Vec :     #code vecteurs 3d et ces operations : vecteurs d'angle compris
 
 
 
-    def matrice (self, a) :     #a = vecteur angle  multiplication d'un vecteur par une matrice de rotation (les angles sont donner par un angle de rotation) le plus simple est de faire matrice axe x ensuite matrice axe y ... 
+    def matrice (self, a) :     # a = vecteur angle  multiplication d'un vecteur par une matrice de rotation (les angles sont donner par un angle de rotation) le plus simple est de faire matrice axe x ensuite matrice axe y ... 
         x1 = self.x     # matrice x
         y1 = self.y * np.cos(-a.x) - self.z * np.sin(-a.x)     # matrice x        - devant tout les angle parce que les matrices sont R(-alpha)+...
         z1 = self.y * np.sin(-a.x) + self.z * np.cos(-a.x)     # matrice x
@@ -67,43 +113,105 @@ class Vec :     #code vecteurs 3d et ces operations : vecteurs d'angle compris
 
 
 #######################################  a changer  ######################################################################################
-        
 
 
-class Point :       #point de chaque prise de données
 
-    point = [] #liste de tout les point cree
 
-    def __init__(self,r,v,t):     #r = vec de position // v = vec de vitesse // t = vec position angulaire
+
+
+
+# point de chaque prise de données
+class Point :
+
+    # liste de tout les point cree
+    point = [] 
+    
+    def __init__(self,vec_r,vec_v,vec_t):
         self.__class__.point.append(self)
-        self.r = r   #r pour r(t)=...
-        self.v = v   #v pour v(t)=...
-        self.t = t   #t pour theta(t)=...
+        self.r = vec_r
+        self.v = vec_v
+        self.t = vec_t
 
-    def step (self, acc, omega):     #acc pour acceleration    le but est de cree n+1 aves les donné de n et les accelerations
-        new_t = omega*t + self.t       #new_t = nouveau theta     cration de theta.n+1
-        uni_acc = acc.matrice(nt)      #uni_acc = image de l'acceleration de l'imu dans le referentiel unique
-        new_r = uni_acc*1/2*t*t + self.v*t + self.r    #new_r = nouvelle position    equation horaire // ne peux pas mettre t^2 beug de int et float
-        new_v = uni_acc*t + self.v      #new_v = nouvelle vitesse  equation horaire pour la vitesse
-        return Point(new_r, new_v, new_t)        #retourne le point d'apres  le pas de recurrence est construit
-
-
-    def __str__(self):  #print
+    #print
+    def __str__(self):  
         return f"Point = position : {self.r}, vitesse : {self.v}, pos angulaire : {self.t}"
 
 
 
 
-def graphics ():
+# pas de recurence  //  acc pour acceleration 
+def step (point_n, acc_n, omega_n):     
+
+    # equation angulaire pour obtenir theta_n+1   //  new_t = thetan+1
+    new_t = omega_n*t + point_n.t
+
+    # passage de l'acceleration de l'IMU dans le referentiel unique
+    uni_acc = acc_n.matrice(nt)
+
+    # equation horaire pour obtenir r_n+1 et v_n+1
+    new_r = uni_acc*1/2*t*t + point_n.v*t + point_n.r
+    new_v = uni_acc*t + point_n.v
+
+    #creation du point_n+1
+    return Point(new_r, new_v, new_t)
+
+
+
+
+# fonction pour extraire les coordonnées et les vitesses des points
+def list_graphe ():
+    
+    for point in Point.point:
+
+        # extraction des coordonnées de position
+        x_coords.append(point.r.x)
+        y_coords.append(point.r.y)
+        z_coords.append(point.r.z)
+        
+        # extraction des vitesses
+        vx_velo.append(point.v.x)
+        vy_velo.append(point.v.y)
+        vz_velo.append(point.v.z)
+
+
+
+
+# creation d un graphique //  utilisation des listes de positions et de vitesses    //  utilisable pour gps et IMU
+def graphics (listrx, listry, listrz, listvx, listvy, listvz):
+
+    # calcule la norme de chaque vitesse
+    velocities = np.sqrt(np.array(u_velocities)**2 + np.array(v_velocities)**2 + np.array(w_velocities)**2)
+
+    # indique le point avec la plus grande vitesse
+    max_velocity_idx = np.argmax(velocities)
+
+    # creation de la figure
+    fig = plt.figure()
+
+    # module de la figure
+    ax = fig.add_subplot(111, projection='3d')
+    
+    # enleve axes et le fond
+    ax.axis('off')
+    
+    # cree les points // c='k' fait que les points sont en noir
+    ax.scatter(listrx, listry, listrz, c='k', marker='o')
+
+    # cree le point avec la plus grande vitesse en rouge
+    ax.scatter(listrx[max_velocity_idx], listry[max_velocity_idx], listrz[max_velocity_idx], c='r', marker='o')
+
+    # cree les vecteurs de vitesse pour chaque points
+    ax.quiver(listrx, listry, listrz, listvx, listvy, listvz)
+
+    # affiche le graphe
+    plt.show()      
 
 
 
 
 
 
-#premiere partie : sortire les info du fichier creer lpar l ardu
-#analyser ces fichier
-#afichage et conclusion..
+
 
 
 
