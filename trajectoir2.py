@@ -19,6 +19,7 @@
 #######################################  a faire  ##############################################################################################
 #
 #
+# mettre le premier point imu au referentiel 0,0,0
 # boucle entre la liste d'info et les positin final
 # creer pour gps too
 # de quoi pouvoir lire le dossier de l'arduino et en extraire les données
@@ -40,8 +41,8 @@
 
 
 # graphique
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+import folium
+from folium.plugins import MarkerCluster
 
 # pour les maths
 import numpy as np      
@@ -132,42 +133,11 @@ class Point :
         self.r = vec_r
         self.v = vec_v
         self.t = vec_t
+        self.label = 'IMU ' + len(self.__class__.point)
 
     #print
     def __str__(self):  
         return f"Point = position : {self.r}, vitesse : {self.v}, pos angulaire : {self.t}"
-
-
-
-
-# point gps et IMU relier au gps pour le graphe
-class Pointgps :
-
-    # liste de tout les point cree
-    point = []
-
-    #attention, les vecteurs seront surement en 2d
-    def __init__(self,vec_r,vec_v):
-        self.__class__.point.append(self)
-        self.r = vec_r
-        self.v = vec_v
-
-    #print
-    def __str__(self):  
-        return f"Point = position : {self.r}, vitesse : {self.v}"
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -189,6 +159,99 @@ def step (point_n, acc_n, omega_n):
 
     #creation du point_n+1
     return Point(new_r, new_v, new_t)
+
+
+
+
+
+
+# point gps et IMU relier au gps pour le graphe
+class Pointgps :
+
+    # liste de tout les point cree
+    point = []
+
+    # attention, les vecteurs seront surement en 2d
+    def __init__(self,vec_r,vec_v,label):
+        self.__class__.point.append(self)
+        self.r = vec_r
+        self.v = vec_v
+        self.label = 'gps ' + len(self.__class__.point)
+
+    # print
+    def __str__(self):  
+        return f"Point = position : {self.r}, vitesse : {self.v}"
+
+
+
+
+
+# passer de tout les point IMU a des coordonée gps
+def IMU_gps ():
+
+    # le point 0,0,0 du referentiel est lier a la premiere coordonnées gps
+    ref_lat = Pointgps.point[0].r.x
+    ref_long = Pointgps.point[0].r.y
+
+    # Creer un marker cluster et le sauve sur la carte  //  ca permet une meilleur lisibiliter sur la carte
+    IMU_cluster = MarkerCluster().add_to(m)
+
+
+    for point in Point.point :
+
+        # calcule la difference d angle entre le point de ref(0,0,0) et le point donner
+        lat_deplacement = point.r.y / 111111
+
+        # le cos et pour corriger les ligne qui se raproche ne fonction de la lat
+        lon_deplacement = point.r.x / (111111 * np.cos(np.radians(ref_lat)))
+
+        # additionne la deifference avec le point de reference
+        lat = ref_lat + lat_deplacement
+        lon = ref_lon + lon_deplacement
+
+        # creer les point en rouge pour IMU et l ajoute dans un cluster
+        folium.Marker(location=[lat, lon], popup=point.label, icon=folium.Icon(color='red')).add_to(IMU_cluster)
+
+
+    
+
+ 
+
+
+
+# creation du graphe
+def graphe ():
+
+    # creation de la carte
+    m = folium.Map(location=[ref_gps_lat, ref_gps_lon], zoom_start=15)
+
+    # faire la fonction IMU pour avoir les coordonnée gps
+    IMU_gps()
+
+    # creer un cluster pour les point gps
+    gps_cluster = MarkerCluster().add_to(m)
+
+    # boucle pour chaque point gps
+    for point in Pointgps.point :
+
+        # sors les coordonnées
+        lat = point.r.y
+        lon = point.r.x
+
+        # creer les point en bleu pour le gps et l ajoute dans son cluster
+    folium.Marker(location=[lat, lon], popup=point.label, icon=folium.Icon(color='blue')).add_to(gps_cluster)
+
+    # affichage de la carte
+    m.save('map.html')
+
+
+
+
+
+
+
+
+
 
 
 
