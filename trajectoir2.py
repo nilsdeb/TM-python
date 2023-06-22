@@ -20,13 +20,9 @@
 #
 #
 # mettre le premier point imu au referentiel 0,0,0
-# boucle entre la liste d'info et les positin final
-# creer pour gps too
-# de quoi pouvoir lire le dossier de l'arduino et en extraire les données
+# de quoi pouvoir lire le dossier de l'arduino et en extraire les données pour l IMU et le gps
 # matrice de merde
-# toute la partie gps pour pouvoir comparer les resultats on a position et vitesse normalement
-# essayer d afficher les point de l'IMU sur la carte gps et les point j^gps pour pouvoir faire les comparatif
-# creer tout le systeme gps sur la meme base que celui imu
+# essayer d'afficher les vecteur vitesses sur la carte
 #
 # optimisation du code genre limitation de vitesse, de chaangement d'angle
 #
@@ -188,7 +184,10 @@ class Pointgps :
 
 # passer de tout les point IMU a des coordonée gps
 def IMU_gps ():
+    
+    #creer la liste de tout les vitesses
 
+    liste_vit = []
     # le point 0,0,0 du referentiel est lier a la premiere coordonnées gps
     ref_lat = Pointgps.point[0].r.x
     ref_long = Pointgps.point[0].r.y
@@ -208,14 +207,20 @@ def IMU_gps ():
         # additionne la deifference avec le point de reference
         lat = ref_lat + lat_deplacement
         lon = ref_lon + lon_deplacement
+        
+        # calcule le norme de la vitesse en 2d
+        vitesse = np.sqrt(point.v.x**2 + point.v.y**2)
 
-        # creer les point en rouge pour IMU et l ajoute dans un cluster
-        folium.Marker(location=[lat, lon], popup=point.label, icon=folium.Icon(color='red')).add_to(IMU_cluster)
+        #ajoute la vitesse a la liste
+        liste_vit.append(vitesse)
 
+        # creer les point en rouge pour IMU, son vecteur de vitesse et l ajoute dans un cluster
+        folium.PolyLine(locations=[position, (lat + point.v.x, lon + point.v.y)],
+                    color='red',
+                    weight=vitesse,
+                    arrowhead=True,
+                    popup=point.label.format(vector)).add_to(marker_cluster)
 
-    
-
- 
 
 
 
@@ -243,19 +248,6 @@ def graphe ():
 
     # affichage de la carte
     m.save('map.html')
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
