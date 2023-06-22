@@ -1,40 +1,45 @@
 import folium
-from folium.plugins import MarkerCluster
 
-# Classe pour les points relatifs en 3D
-class RelativePoint3D:
-    def __init__(self, dx, dy, dz, label):
-        self.dx = dx
-        self.dy = dy
-        self.dz = dz
-        self.label = label
+# Point GPS de départ
+gps_lat = 48.859693
+gps_lon = 2.347237
 
-# Coordonnées du point GPS de référence
-ref_gps_lat = 48.8588377
-ref_gps_lon = 2.2770206
-
-# Liste des points relatifs en 3D
-relative_points_3d = [
-    RelativePoint3D(0, 0, 0, "Point 1"),
-    RelativePoint3D(10, 5, 2, "Point 2"),
-    RelativePoint3D(15, -3, 1, "Point 3"),
-    # Ajoutez d'autres points ici...
+# Accélérations
+accelerations = [
+    (1.5, 0.2, -0.5),
+    (0.8, -0.3, 0.9),
+    (-0.7, 0.5, -1.2),
+    (0.3, -0.6, 1.4),
+    (-1.2, 0.7, -0.9),
+    (0.5, -0.4, 0.3),
+    (-0.6, 0.3, -0.8),
+    (0.9, -1.2, 0.5),
+    (-0.4, 0.5, -0.3),
+    (0.3, -0.2, 0.1),
+    (0.5, -0.6, 0.9),
+    (-0.8, 1.0, -0.7),
+    (0.6, -0.4, 0.5),
+    (-0.3, 0.1, -0.2),
+    (0.7, -0.5, 0.6),
+    (-0.4, 0.3, -0.5),
+    (0.2, -0.1, 0.3),
+    (-0.5, 0.4, -0.2),
+    (0.3, -0.3, 0.4),
+    (-0.1, 0.2, -0.3)
 ]
 
-# Création de la carte centrée sur le point GPS de référence
-m = folium.Map(location=[ref_gps_lat, ref_gps_lon], zoom_start=15)
+# Liste des positions
+positions = [(gps_lat, gps_lon)]
+for acceleration in accelerations:
+    lat = positions[-1][0] + acceleration[0] * 0.5
+    lon = positions[-1][1] + acceleration[1] * 0.5
+    positions.append((lat, lon))
 
-# Ajout du marqueur pour le point GPS de référence
-folium.Marker(location=[ref_gps_lat, ref_gps_lon], popup="Référence GPS").add_to(m)
+# Création de la carte
+m = folium.Map(location=[gps_lat, gps_lon], zoom_start=15)
 
-# Relier les points relatifs à leurs positions GPS respectives en 3D
-for point in relative_points_3d:
-    gps_lat = ref_gps_lat + point.dx
-    gps_lon = ref_gps_lon + point.dy
-    folium.Marker(location=[gps_lat, gps_lon], popup=point.label, icon=folium.Icon(color='blue', icon='cube')).add_to(m)
-
-# Affichage de la carte avec le cluster de marqueurs
-marker_cluster = MarkerCluster().add_to(m)
+# Trajet
+folium.PolyLine(locations=positions, color='blue', weight=2.5, opacity=1).add_to(m)
 
 # Affichage de la carte
-m.save('map.html')
+m.save('trajet.html')
