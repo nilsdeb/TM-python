@@ -19,11 +19,13 @@
 #######################################  a faire  ##############################################################################################
 #
 #
+# boucle entre la liste d'info et les positin final
+# creer pour gps too
 # de quoi pouvoir lire le dossier de l'arduino et en extraire les données
 # matrice de merde
 # toute la partie gps pour pouvoir comparer les resultats on a position et vitesse normalement
 # essayer d afficher les point de l'IMU sur la carte gps et les point j^gps pour pouvoir faire les comparatif
-#
+# creer tout le systeme gps sur la meme base que celui imu
 #
 # optimisation du code genre limitation de vitesse, de chaangement d'angle
 #
@@ -119,8 +121,6 @@ class Vec :
 
 
 
-
-
 # point de chaque prise de données
 class Point :
 
@@ -140,6 +140,40 @@ class Point :
 
 
 
+# point gps et IMU relier au gps pour le graphe
+class Pointgps :
+
+    # liste de tout les point cree
+    point = []
+
+    #attention, les vecteurs seront surement en 2d
+    def __init__(self,vec_r,vec_v):
+        self.__class__.point.append(self)
+        self.r = vec_r
+        self.v = vec_v
+
+    #print
+    def __str__(self):  
+        return f"Point = position : {self.r}, vitesse : {self.v}"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # pas de recurence  //  acc pour acceleration 
 def step (point_n, acc_n, omega_n):     
 
@@ -155,6 +189,26 @@ def step (point_n, acc_n, omega_n):
 
     #creation du point_n+1
     return Point(new_r, new_v, new_t)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
