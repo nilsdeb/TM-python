@@ -41,7 +41,7 @@ from folium.plugins import MarkerCluster
 import numpy as np      
 
 # temp entre chaque mesure des acceleration utiliser dans step
-t = 0.5  
+t = 1000
 
 # Accélérations
 accs = [
@@ -169,7 +169,7 @@ def step (point_n, acc_n, omega_n):
     new_t = omega_n*t + point_n.t
 
     # passage de l'acceleration de l'IMU dans le referentiel unique
-    uni_acc = acc_n.matrice(nt)
+    uni_acc = acc_n  #.matrice(nt)
 
     # equation horaire pour obtenir r_n+1 et v_n+1
     new_r = uni_acc*1/2*t*t + point_n.v*t + point_n.r
@@ -190,11 +190,11 @@ class Pointgps :
     point = []
 
     # attention, les vecteurs seront surement en 2d
-    def __init__(self,vec_r,vec_v,label):
+    def __init__(self,vec_r,vec_v):
         self.__class__.point.append(self)
         self.r = vec_r
         self.v = vec_v
-        self.label = 'gps ' + len(self.__class__.point)
+        self.label = 'gps ' + str(len(self.__class__.point))
 
     # print
     def __str__(self):  
@@ -215,7 +215,7 @@ def IMU_gps ():
     ref_long = Pointgps.point[0].r.y
 
     # Creer un marker cluster et le sauve sur la carte  //  ca permet une meilleur lisibiliter sur la carte
-    IMU_cluster = MarkerCluster().add_to(m)
+    IMU_cluster = MarkerCluster()
 
 
     for point in Point.point :
@@ -228,7 +228,7 @@ def IMU_gps ():
 
         # additionne la deifference avec le point de reference
         lat = ref_lat + lat_deplacement
-        lon = ref_lon + lon_deplacement
+        lon = ref_long + lon_deplacement
         
         # calcule le norme de la vitesse en 2d
         vitesse = np.sqrt(point.v.x**2 + point.v.y**2)
@@ -237,11 +237,10 @@ def IMU_gps ():
         liste_vit.append(vitesse)
 
         # creer les point en rouge pour IMU, son vecteur de vitesse et l ajoute dans un cluster
-        folium.PolyLine(locations=[position, (lat + point.v.x, lon + point.v.y)],
-                    color='red',
-                    weight=vitesse,
-                    arrowhead=True,
-                    popup=point.label.format(vector)).add_to(marker_cluster)
+        folium.Marker(location=(lat + point.v.x, lon + point.v.y),
+                  popup=point.label,
+                  icon=folium.Icon(color='red')).add_to(IMU_cluster)
+
 
 
 
@@ -249,14 +248,20 @@ def IMU_gps ():
 # creation du graphe
 def graphe ():
 
+    # le point 0,0,0 du referentiel est lier a la premiere coordonnées gps
+    ref_lat = Pointgps.point[0].r.x
+    ref_long = Pointgps.point[0].r.y
+
     # creation de la carte
-    m = folium.Map(location=[ref_gps_lat, ref_gps_lon], zoom_start=15)
+    m = folium.Map(location=[ref_lat, ref_long], zoom_start=15)
 
     # faire la fonction IMU pour avoir les coordonnée gps
     IMU_gps()
 
     # creer un cluster pour les point gps
     gps_cluster = MarkerCluster().add_to(m)
+
+    IMU_cluster = MarkerCluster().add_to(m)
 
     # boucle pour chaque point gps
     for point in Pointgps.point :
@@ -269,7 +274,7 @@ def graphe ():
     folium.Marker(location=[lat, lon], popup=point.label, icon=folium.Icon(color='blue')).add_to(gps_cluster)
 
     # affichage de la carte
-    m.save('map.html')
+    m.save('map45.html')
 
 
 
@@ -355,13 +360,41 @@ def graphics (listrx, listry, listrz, listvx, listvy, listvz):
 
 
 def main():
+
+    #creer un vecteur 0 pour qq truc
     vec0 = Vec(0,0,0)
+
+    #avant de creer la def, creer le referentiel unique
     point1 = Point(vec0,vec0,vec0)
-    print(point1)
+
+    #transforme tout la liste d'acceleration en vecteur
     for acc in accs :
         liste_vecacc.append(Vec(acc[0],acc[1],acc[2]))
 
-    print(liste_vecacc)
+    #creer tout les points
+    for vecacc in liste_vecacc :
+        step(Point.point[-1], vecacc, vec0)
+
+    #creer coordonnée gps
+    gps0 = Vec(46.2319,6.8524,0)
+
+    # creation du point gps 0
+    pointgps0 = Pointgps(gps0,vec0)
+
+    #creer le graphe gps
+    graphe()
+
+
+
+
+    
+
+    
+
+    
+
+    
+
     
 
 
