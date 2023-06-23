@@ -1,8 +1,4 @@
 
-
-
-
-
 #######################################  structure du code  ######################################################################################
 #
 #
@@ -18,12 +14,13 @@
 #
 #######################################  a faire  ##############################################################################################
 #
-#
+# verifier le code
 # mettre le premier point imu au referentiel 0,0,0
 # de quoi pouvoir lire le dossier de l'arduino et en extraire les données pour l IMU et le gps
 # matrice de merde
 # essayer d'afficher les vecteur vitesses sur la carte
-#
+#enlever le g permannent
+# 
 # optimisation du code genre limitation de vitesse, de chaangement d'angle
 #
 #
@@ -46,19 +43,43 @@ import numpy as np
 # temp entre chaque mesure des acceleration utiliser dans step
 t = 0.5  
 
-# liste des position pour l'affichage graphique
-x_coords = []       
-y_coords = []
-z_coords = []
+# Accélérations
+accs = [
+    [0, 0, 0],
+    [1.5, 0.2, -0.5],
+    [0.8, -0.3, 0.9],
+    [-0.7, 0.5, -1.2],
+    [0.3, -0.6, 1.4],
+    [-1.2, 0.7, -0.9],
+    [0.5, -0.4, 0.3],
+    [-0.6, 0.3, -0.8],
+    [0.9, -1.2, 0.5],
+    [-0.4, 0.5, -0.3],
+    [0.3, -0.2, 0.1],
+    [0.5, -0.6, 0.9],
+    [-0.8, 1.0, -0.7],
+    [0.6, -0.4, 0.5],
+    [-0.3, 0.1, -0.2],
+    [0.7, -0.5, 0.6],
+    [-0.4, 0.3, -0.5],
+    [0.2, -0.1, 0.3],
+    [-0.5, 0.4, -0.2],
+    [0.3, -0.3, 0.4],
+    [-0.1, 0.2, -0.3]
+]
 
-# liste des vitesse pour graph
-vx_velo = []        
-vy_velo = []
-vz_velo = []
+liste_vecacc = []
 
 
 
 
+
+
+
+
+
+
+# verifier a par matrice
 # code vecteurs 3d et ces operations : vecteurs d'angle compris
 class Vec :     
 
@@ -129,14 +150,15 @@ class Point :
         self.r = vec_r
         self.v = vec_v
         self.t = vec_t
-        self.label = 'IMU ' + len(self.__class__.point)
+        self.label = 'IMU ' + str(len(self.__class__.point))
 
     #print
     def __str__(self):  
-        return f"Point = position : {self.r}, vitesse : {self.v}, pos angulaire : {self.t}"
+        return f"Point {self.label} = position : {self.r}, vitesse : {self.v}, pos angulaire : {self.t}"
 
 
-
+def ref_unique ():
+    pass
 
 
 
@@ -327,21 +349,26 @@ def graphics (listrx, listry, listrz, listvx, listvy, listvz):
 
 
 
+
+
+
+
+
 def main():
-    r0 = Vec(4, 5, 6)
-    v0 = Vec(7 , 8, 9)
-    t0 = Vec(1,1,1)
-    base = Point(r0, v0, t0)
-    o1 = Vec(1,2,3)
-    a1 = Vec(1,2,3)
-    step1 = base.step(a1, o1)
-    #print(step1)
-    #print(step1.r.norme())
-    unit = Vec(9.4567,6.6324,3.6234)
-    angle = Vec(5,34,76)
-    nunit = unit.matrice(angle)
-    #print(unit, unit.norme())
-    #print(nunit, nunit.norme())
+    vec0 = Vec(0,0,0)
+    point1 = Point(vec0,vec0,vec0)
+    print(point1)
+    for acc in accs :
+        liste_vecacc.append(Vec(acc[0],acc[1],acc[2]))
+
+    print(liste_vecacc)
+    
+
+
+
+
+
+    
 
 if __name__ == '__main__':
     main()
