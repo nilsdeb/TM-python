@@ -2,24 +2,37 @@
 #######################################  structure du code  ######################################################################################
 #
 #
+# initialisation :
 # package
 # liste et variable
+# en ce moment donnée
 # class vecteur
-# class point
+#
+# analyse des donnees de l IMU :
+# class pointIMU
+# fonction de la creation du referentiel unique
 # pas de recurence
-# extraction position et vitesse pour les listes pour le graphe
-# creation du graphe
+#
+# analyse des donnees du gps :
+# class gps
+#
+# creation du graphe :
+# 
+# fonction graphe
+    # fonction interne passe des point IMU a gps
+#
+# main :
 # main
 #
 #
 #######################################  a faire  ##############################################################################################
 #
-# verifier le code
-# mettre le premier point imu au referentiel 0,0,0
-# de quoi pouvoir lire le dossier de l'arduino et en extraire les données pour l IMU et le gps
-# matrice de merde
-# essayer d'afficher les vecteur vitesses sur la carte
-#enlever le g permannent
+#
+# mettre le premier point imu au referentiel 0,0,0       matrice
+# de quoi pouvoir lire le dossier de l'arduino et en extraire les données pour l IMU et le gps    
+# matrice de merde       matrice
+# enlever le g permannent       matrice
+# comment savoir la direction sur la carte des points IMU?
 # 
 # optimisation du code genre limitation de vitesse, de chaangement d'angle
 #
@@ -27,9 +40,7 @@
 #################################################################################################################################################
 
 
-
-
-
+#######################################  initialisation  ######################################################################################
 
 
 
@@ -72,13 +83,6 @@ liste_vecacc = []
 
 
 
-
-
-
-
-
-
-
 # code vecteurs 3d et ces operations : vecteurs d'angle compris
 class Vec :     
 
@@ -112,9 +116,6 @@ class Vec :
     def norme (self) :
         return  np.sqrt(self.x*self.x+self.y*self.y+self.z*self.z)
 
-
-
-
 #######################################  a changer  ######################################################################################
 
 
@@ -132,10 +133,17 @@ class Vec :
         return Vec(x3, y3, z3)
 
 
-#######################################  a changer  ######################################################################################
 
 
 
+
+
+
+
+
+
+
+#######################################  traitement des donnees de l IMU  ######################################################################################
 
 
 # point de chaque prise de données
@@ -183,6 +191,18 @@ def step (point_n, acc_n, omega_n):
 
 
 
+
+
+
+
+
+
+
+
+#######################################  traitement des donnees du gps  ######################################################################################
+
+
+
 # point gps et IMU relier au gps pour le graphe
 class Pointgps :
 
@@ -208,6 +228,10 @@ class Pointgps :
 
 
 
+
+
+
+#######################################  creation de la carte  ######################################################################################
 
 
 # creation du graphe
@@ -257,7 +281,7 @@ def graphe ():
 
 
 
-
+#######################################  main  ######################################################################################
 
 def main():
 
@@ -274,8 +298,6 @@ def main():
     #creer tout les points
     for vecacc in liste_vecacc :
         step(Point.point[-1], vecacc, vec0)
-
-    print(Point.point)
 
     #creer coordonnée gps
     gps0 = Vec(46.2319,6.8524,0)
