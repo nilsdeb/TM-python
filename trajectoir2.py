@@ -41,7 +41,7 @@ from folium.plugins import MarkerCluster
 import numpy as np      
 
 # temp entre chaque mesure des acceleration utiliser dans step
-t = 1000
+t = 5
 
 # Accélérations
 accs = [
@@ -214,24 +214,14 @@ class Pointgps :
 def graphe ():
 
     # le point 0,0,0 du referentiel est lier a la premiere coordonnées gps
-    ref_lat = Pointgps.point[0].r.y
-    ref_lon = Pointgps.point[0].r.x
+    ref_lat = Pointgps.point[0].r.x
+    ref_lon = Pointgps.point[0].r.y
 
     # creation de la carte
     m = folium.Map(location=[ref_lat, ref_lon], zoom_start=15)
 
-    # creer un cluster pour les point gps
-    gps_cluster = MarkerCluster().add_to(m)
-
-    IMU_cluster = MarkerCluster().add_to(m)
-
-
     # passer de tout les point IMU a des coordonée gps, fonction interrieur
-    def IMU_gps (cluster):
-
-        # Creer un marker cluster et le sauve sur la carte  //  ca permet une meilleur lisibiliter sur la carte
-        IMU_cluster = MarkerCluster()
-
+    def IMU_gps ():
 
         for point in Point.point :
 
@@ -246,25 +236,20 @@ def graphe ():
             lon = ref_lon + lon_deplacement
 
             # creer les point en rouge pour l IMU et l ajoute dans son cluster
-            folium.Marker(location=[lat, lon], popup=point.label, icon=folium.Icon(color='red')).add_to(cluster)
+            folium.Marker(location=[lat, lon], popup=point.label, icon=folium.Icon(color='red')).add_to(m)
 
     # faire la fonction IMU pour avoir les coordonnée gps
-    IMU_gps(IMU_cluster)
-
-    print(IMU_cluster)
-    print(gps_cluster)
+    IMU_gps()
 
     # boucle pour chaque point gps
     for point in Pointgps.point :
 
         # sors les coordonnées
-        lat = point.r.y
-        lon = point.r.x
+        lat = point.r.x
+        lon = point.r.y
 
         # creer les point en bleu pour le gps et l ajoute dans son cluster
-        folium.Marker(location=[lat, lon], popup=point.label, icon=folium.Icon(color='blue')).add_to(gps_cluster)
-
-    print(IMU_cluster)
+        folium.Marker(location=[lat, lon], popup=point.label, icon=folium.Icon(color='blue')).add_to(m)
 
     # affichage de la carte
     m.save('map4.html')
