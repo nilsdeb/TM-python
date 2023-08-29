@@ -249,10 +249,10 @@ def graphe ():
 
         for point in Point.point :
 
-            # calcule la difference d angle entre le point de ref(0,0,0) et le point donner
+            # calcule la difference d angle entre le point de ref(0,0,0) et le point donner  /111111 parce que c est 1 metre en degrer pour le gps
             lat_deplacement = point.r.y / 111111
 
-            # le cos et pour corriger les ligne qui se raproche ne fonction de la lat
+            # le cos et pour corriger les ligne qui se raproche ne fonction de la lat geometrie de la terre...
             lon_deplacement = point.r.x / (111111 * np.cos(np.radians(ref_lat)))
 
             # additionne la deifference avec le point de reference
