@@ -62,7 +62,6 @@ def rotationVecteur(vectorAngle, vector):
 
 #######################################  class point  ######################################################################################
 
-# c est plus simple de cree deux class pour ne pas faire de confusion
 
 #class des point IMU
 class PointIMU :
@@ -71,9 +70,9 @@ class PointIMU :
     
     def __init__(self,vec_r,vec_v,vec_t):
         self.__class__.point.append(self)
-        self.r = vec_r
-        self.v = vec_v
-        self.t = vec_t
+        self.r = vec_r  #position
+        self.v = vec_v  #vitesse
+        self.t = vec_t  #position angulaire
         self.label = 'IMU ' + str(len(self.__class__.point))
 
     #print
@@ -92,8 +91,7 @@ class PointGPS :
     # attention, les vecteurs seront surement en 2d
     def __init__(self,vec_r,vec_v):
         self.__class__.point.append(self)
-        self.r = vec_r
-        self.v = vec_v
+        self.r = vec_r  #position
         self.label = 'gps ' + str(len(self.__class__.point))
 
     # print
@@ -108,29 +106,29 @@ class PointGPS :
 
 
 
-def angleG(vec):
+def initialisation(vec):
     """creer le referentiel unique"""
+    theta_x = np.arccos(vec[0]/np.linalg.norm(vec))
+    theta_y = np.arccos(vec[1]/np.linalg.norm(vec))
+    theta_z = np.arccos(vec[2]/np.linalg.norm(vec))
 
-    theta_x = np.arccos(vec[0] / np.linalg.norm(vec))
-    theta_y = np.arccos(vec[1] / np.linalg.norm(vec))
-    theta_z = np.arccos(vec[2] / np.linalg.norm(vec))   
-    
-    
+    angle = np.array([theta_x,theta_y,theta_z])
+    print(angle)
+    print(np.linalg.norm(vec))
 
-    angle =  np.array([-(theta_x-np.pi/2), -theta_y, -(theta_z-np.pi/2)])
-    return angle
+    angleg = np.array([np.pi/2,0,np.pi/2])
+
+    deltaAngle = angleg-angle
+
+    print(angleg)
+    print(deltaAngle)
+
+    # quelle angles signifie quoi?, alpha plan axes x-y?  comment savoir dans quelle ordre faut tourner le vecteur, surment matrice mais pas encore fait... a documenter et comprende
 
 
+def recurence(pointimu,vecteuracc):
+    """passage entre n et n+1"""
 
+    # equation angulaire pour obtenir theta_n+1   //  new_t = thetan+1
+    new_t = omega_n*t + point_n.t
 
-
-
-
-vec = np.array([2,6,7])
-vec2 = angleG(vec)
-print(vec)
-print(vec2)
-
-vec3 = rotationVecteur(vec2,vec)
-
-print(vec3)
