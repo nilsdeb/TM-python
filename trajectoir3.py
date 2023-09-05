@@ -1,3 +1,19 @@
+#######################################  a faire  ######################################################################################
+#
+#
+#
+#
+#
+#
+#lire fichier
+#finir initialisation ---------v
+#finir angle entre gps et imu--> faire fonction calule d angle dans les plan et dans l espace
+#cretation graphe aussi
+#
+#
+#
+#
+#
 #######################################  librairie  ######################################################################################
 
 
@@ -9,6 +25,17 @@ from folium.plugins import MarkerCluster
 # pour les maths
 import numpy as np
 from numpy import linalg as LA
+
+#######################################  liste et variable  ######################################################################################
+
+#constente du temps entre deux mesures
+temps = 1
+
+#liste donne, a organiser de cette magniere: [[t,accx....][t2,acc....]]
+
+donne = []
+
+
 
 
 ################################### Fonction pour effectuer la rotation d'un vecteur à l'aide de quaternions  #############################
@@ -58,6 +85,20 @@ def rotationVecteur(vectorAngle, vector):
     rotated_vector = rotated_quaternion[1:]
     return rotated_vector
  
+#######################################  fonction calule d angle entre vecteurs  ######################################################################################
+
+
+
+def anglePlane(vecteur1,vecteur2):
+    pass
+
+
+
+
+
+
+
+
 
 
 #######################################  class point  ######################################################################################
@@ -89,7 +130,7 @@ class PointGPS :
     point = []
 
     # attention, les vecteurs seront surement en 2d
-    def __init__(self,vec_r,vec_v):
+    def __init__(self,vec_r):
         self.__class__.point.append(self)
         self.r = vec_r  #position
         self.label = 'gps ' + str(len(self.__class__.point))
@@ -100,6 +141,11 @@ class PointGPS :
 
 
 
+
+#######################################  fonction  ######################################################################################
+
+def lireFichier():
+    pass
 
 
 
@@ -123,12 +169,68 @@ def initialisation(vec):
     print(angleg)
     print(deltaAngle)
 
+
+    return PointIMU()
+
     # quelle angles signifie quoi?, alpha plan axes x-y?  comment savoir dans quelle ordre faut tourner le vecteur, surment matrice mais pas encore fait... a documenter et comprende
 
 
-def recurence(pointimu,vecteuracc):
+def recurence(pointIMU,vecteurAcc,vecteurAng):
     """passage entre n et n+1"""
 
     # equation angulaire pour obtenir theta_n+1   //  new_t = thetan+1
-    new_t = omega_n*t + point_n.t
+    newOmega = vecteurAng*temps + pointIMU.t
 
+    # passage de l'acceleration de l'IMU dans le referentiel unique
+    accelUnique = rotationVecteur(newOmega,vecteurAng)
+
+    # equation horaire pour obtenir r_n+1 et v_n+1
+    new_r = accelUnique*1/2*(temps**2) + pointIMU.v*temps + pointIMU.r
+    new_v = accelUnique*temps + pointIMU.v
+
+    #creation du point_n+1
+    return PointIMU(new_r, new_v, newOmega)
+
+
+
+
+def creationPointGps (long, lat):
+
+    position = np.array([long,lat])
+
+    return PointGPS(position)
+
+
+
+
+def allignement():
+    """"allignement entre les point gps et imu"""
+
+    #nescecite que l initialisation sois faite  
+    nombrePoint = 1 
+
+    #permet de creer les point uniquement jusqu il y aie un deplacement de 20 m
+    while numpy.linalg.norm(PointIMU.point[nombrePoint].r[:1])> 20: 
+
+        #construi le point IMU il faut changer les indice suivant comment est construite la liste
+        recurence(PointIMU.point[nombrePoint],donne[nombrePoint][0],donne[nombrePoint][1])   
+
+        #construi le point gps de la meme mesure   changer les indices
+        creationPointGps(donne[nombrePoint][3],donne[nombrePoint][4])
+
+        # metrs a jour la constente  
+        nombrePoint = nombrePoint + 1
+
+
+
+
+
+def creationGraphe():
+    pass
+
+
+def main():
+    pass
+
+if __name__ == '__main__':
+    main()
