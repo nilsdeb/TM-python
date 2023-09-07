@@ -6,12 +6,9 @@
 #
 #
 #lire fichier
-#finir initialisation ---------v
-#finir angle entre gps et imu--> faire fonction calule d angle dans les plan et dans l espace
-#cretation graphe aussi
 #
 #
-#attention, quelle vecteur = a quoi, genre surtout axe pour les angle x y etc... vas faloir tester et etre au claire
+# attention, quelle vecteur = a quoi, genre surtout axe pour les angle x y etc... vas faloir tester et etre au claire
 #
 #
 #######################################  librairie  ######################################################################################
@@ -33,7 +30,6 @@ temps = 1
 #liste donne, a organiser de cette magniere: [[t,accx....][t2,acc....]]
 
 donne = []
-
 
 
 
@@ -89,7 +85,7 @@ def rotationVecteur(vectorAngle, vector):
 
 
 def anglesysteme(vecteurX,vecteurY):
-    """calule l'angle par rapport a l'axe x du plan"""
+    """calule l'angle par rapport a l'axe des abcisses du plan"""
 
     norme = np.sqrt(vecteurX**2+vecteurY**2)
 
@@ -118,9 +114,32 @@ def diffAnglePlanXY (vecteur1,vecteur2):
 
     return  (angle2-angle1)
 
+def diffAngle3D(vecteur1,vecteur2):
+
+    angleAlpha1 = anglesysteme(vecteur1[0],vecteur1[1])
+    angleBeta1 = anglesysteme(vecteur1[1],vecteur1[2])
+    angleGamma1 = anglesysteme(vecteur1[2],vecteur1[0])
+
+    angleAlpha2 = anglesysteme(vecteur2[0],vecteur2[1])
+    angleBeta2 = anglesysteme(vecteur2[1],vecteur2[2])
+    angleGamma2 = anglesysteme(vecteur2[2],vecteur2[0])
+
+    return np.array([angleAlpha2-angleAlpha1],[angleBeta2-angleBeta1],[angleGamma2-angleGamma1])
 
 
+#######################################  initialisation  ######################################################################################
 
+
+def initialisation(vec):
+    """creer le referentiel unique"""
+    norme = np.linalg.norm(vec) 
+    g = np.array([0,norme,0])
+
+    angleDiff = diffAngle3D(vec,g)
+
+    vec0 = np.array([0,0,0])
+
+    return PointIMU(vec0,vec0,angleDiff)
 
 
 
@@ -185,72 +204,6 @@ def lireFichier():
 
 
 
-def initialisation(vec):
-    """creer le referentiel unique"""
-    theta_x = np.arccos(vec[0]/np.linalg.norm(vec))
-    theta_y = np.arccos(vec[1]/np.linalg.norm(vec))
-    theta_z = np.arccos(vec[2]/np.linalg.norm(vec))
-
-    angle = np.array([theta_x,theta_y,theta_z])
-    print(angle)
-    print(np.linalg.norm(vec))
-
-    angleg = np.array([np.pi/2,0,np.pi/2])
-
-    deltaAngle = angleg-angle
-
-    print(angleg)
-    print(deltaAngle)
-
-
-    return PointIMU()
-
-    # quelle angles signifie quoi?, alpha plan axes x-y?  comment savoir dans quelle ordre faut tourner le vecteur, surment matrice mais pas encore fait... a documenter et comprende
-
-
-def recurence(pointIMU,vecteurAcc,vecteurAng):
-    """passage entre n et n+1"""
-
-    # equation angulaire pour obtenir theta_n+1   //  new_t = thetan+1
-    newOmega = vecteurAng*temps + pointIMU.t
-
-    # passage de l'acceleration de l'IMU dans le referentiel unique
-    accelUnique = rotationVecteur(newOmega,vecteurAng)
-
-    # equation horaire pour obtenir r_n+1 et v_n+1
-    new_r = accelUnique*1/2*(temps**2) + pointIMU.v*temps + pointIMU.r
-    new_v = accelUnique*temps + pointIMU.v
-
-    #creation du point_n+1
-    return PointIMU(new_r, new_v, newOmega)
-
-
-
-
-def creationPointGps (long, lat):
-
-    position = np.array([long,lat])
-
-    return PointGPS(position)
-
-def pointImuToGps(pointimu):
-    # calcule la difference d angle entre le point de ref(0,0,0) et le point donner  /111111 parce que c est 1 metre en degrer pour le gps
-    lat_deplacement = point.r[1] / 111111
-
-    # le cos et pour corriger les ligne qui se raproche ne fonction de la lat geometrie de la terre...
-    lon_deplacement = point.r[0] / (111111 * np.cos(np.radians(ref_lat)))
-
-    # additionne la deifference avec le point de reference
-    lat = donne[0][3] + lat_deplacement     #changer le deuxième indice
-    lon = donne[0][3] + lon_deplacement
-
-    return PointGps(np.array([lat,lon]))
-
-
-
-
-
-
 def allignement():
     """"allignement entre les point gps et imu"""
 
@@ -295,6 +248,30 @@ def allignement():
 
 
 
+def recurence(pointIMU,vecteurAcc,vecteurAng):
+    """passage entre n et n+1"""
+
+    # equation angulaire pour obtenir theta_n+1   //  new_t = thetan+1
+    newOmega = vecteurAng*temps + pointIMU.t
+
+    # passage de l'acceleration de l'IMU dans le referentiel unique
+    accelUnique = rotationVecteur(newOmega,vecteurAng)
+
+    # equation horaire pour obtenir r_n+1 et v_n+1
+    new_r = accelUnique*1/2*(temps**2) + pointIMU.v*temps + pointIMU.r
+    new_v = accelUnique*temps + pointIMU.v
+
+    #creation du point_n+1
+    return PointIMU(new_r, new_v, newOmega)
+
+
+
+
+def creationPointGps (long, lat):
+
+    position = np.array([long,lat])
+
+    return PointGPS(position)
 
 
 
@@ -302,6 +279,65 @@ def allignement():
 
 
 
+
+
+
+def creationGraphe():
+    # creation de la carte
+    m = folium.Map(location=[ref_lat, ref_lon], zoom_start=15)
+
+    for point in PointIMU.point :
+
+        # calcule la difference d angle entre le point de ref(0,0,0) et le point donner  /111111 parce que c est 1 metre en degrer pour le gps
+        lat_deplacement = point.r[1] / 111111
+
+        # le cos et pour corriger les ligne qui se raproche ne fonction de la lat geometrie de la terre...
+        lon_deplacement = point.r[0] / (111111 * np.cos(np.radians(ref_lat)))
+
+        # additionne la deifference avec le point de reference
+        lat = donne[0][3] + lat_deplacement     #changer le deuxième indice
+        lon = donne[0][3] + lon_deplacement
+
+        # creer les point en rouge pour l IMU et l ajoute dans son cluster
+        folium.Marker(location=[lat, lon], popup=point.label, icon=folium.Icon(color='red')).add_to(m)
+
+    # boucle pour chaque point gps
+    for point in PointGPS.point :
+
+        # sors les coordonnées
+        lat = point.r.x
+        lon = point.r.y
+
+        # creer les point en bleu pour le gps et l ajoute dans son cluster
+        folium.Marker(location=[lat, lon], popup=point.label, icon=folium.Icon(color='blue')).add_to(m)
+
+    # affichage de la carte
+    m.save('map4.html')
+
+
+
+
+
+
+
+
+
+
+def main():
+
+    lireFichier()
+    allignement()
+    for instances in donne :
+        vecacc = np.array([donne[instances][0],donne[instances][1],donne[instances][2]])        #a cahnger
+        vecang = np.array([donne[instances][4],donne[instances][5],donne[instances][6]])        #a cahnger
+
+        recurence(PointIMU.point[-1],vecacc,vecang)
+
+        creationPointGps(donne[instances][7],donne[instances][8])
+
+    creationGraphe()
+
+    
 
     
 
@@ -309,14 +345,6 @@ def allignement():
 
 
 
-def creationGraphe():
-    pass
-
-
-def main():
-    vecteur = np.array([1,-1,0])
-    Angle = anglesysteme(vecteur[0],vecteur[1])
-    print(vecteur, Angle*360/(2*np.pi))
 
 if __name__ == '__main__':
     main()
