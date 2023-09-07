@@ -89,8 +89,42 @@ def rotationVecteur(vectorAngle, vector):
 
 
 
-def anglePlane(vecteur1,vecteur2):
-    pass
+def anglesysteme(vecteurX,vecteurY):
+    """calule l'angle par rapport a l'axe x du plan"""
+
+    norme = np.sqrt(vecteurX**2+vecteurY**2)
+
+    sin = vecteurY/norme
+
+    cos = vecteurX/norme
+
+    #cherche a faire les cercle trigo pour avoir un angle precis a 360 est non a 90n degrer
+    if sin >= 0 and cos > 0 or sin > 0 and cos < 0:      #il considere sin90 = -0, donc si mon vecteur est pile a l angle droit, il me mets 270 au lieu de 90....
+
+        angle = np.arccos(cos)
+
+    else :
+        angle = np.pi*2-np.arccos(cos)
+
+
+    return angle
+    
+
+def diffAnglePlanXY (vecteur1,vecteur2):
+    """angle pour passer du vecteur 1 au vecteur 2"""
+
+    angle1 = anglesysteme(vecteur1[0],vecteur1[1])
+
+    angle2 = anglesysteme(vecteur2[0],vecteur2[1])
+
+    return  (angle2-angle1)
+
+
+
+
+
+
+
 
 
 
@@ -137,7 +171,7 @@ class PointGPS :
 
     # print
     def __str__(self):  
-        return f"Point = position : {self.r}, vitesse : {self.v}"
+        return f"Point = position : {self.r}"
 
 
 
@@ -200,6 +234,21 @@ def creationPointGps (long, lat):
 
     return PointGPS(position)
 
+def pointImuToGps(pointimu):
+    # calcule la difference d angle entre le point de ref(0,0,0) et le point donner  /111111 parce que c est 1 metre en degrer pour le gps
+    lat_deplacement = point.r[1] / 111111
+
+    # le cos et pour corriger les ligne qui se raproche ne fonction de la lat geometrie de la terre...
+    lon_deplacement = point.r[0] / (111111 * np.cos(np.radians(ref_lat)))
+
+    # additionne la deifference avec le point de reference
+    lat = donne[0][3] + lat_deplacement     #changer le deuxième indice
+    lon = donne[0][3] + lon_deplacement
+
+    return PointGps(np.array([lat,lon]))
+
+
+
 
 
 
@@ -210,7 +259,7 @@ def allignement():
     nombrePoint = 1 
 
     #permet de creer les point uniquement jusqu il y aie un deplacement de 20 m
-    while numpy.linalg.norm(PointIMU.point[nombrePoint].r[:1])> 20: 
+    while np.linalg.norm(PointIMU.point[nombrePoint].r[:1])> 20: 
 
         #construi le point IMU il faut changer les indice suivant comment est construite la liste
         recurence(PointIMU.point[nombrePoint],donne[nombrePoint][0],donne[nombrePoint][1])   
@@ -221,6 +270,24 @@ def allignement():
         # metrs a jour la constente  
         nombrePoint = nombrePoint + 1
 
+    gps2 = pointImuToGps(PointIMU.point[-1])
+
+    gps1 = creationPointGps(donne[nombrePoint][3],donne[nombrePoint][4])        # a changer les indices
+
+    gps0 = creationPointGps(donne[0][3],donne[0][4])        #a changer
+
+    vecteur1 = gps1.r-gps0.r
+    vecteur2 = gps2.r-gps0.r
+
+    angle = diffAnglePlanXY(vecteur2,vecteur1)
+
+    
+
+
+
+
+    
+
 
 
 
@@ -230,7 +297,9 @@ def creationGraphe():
 
 
 def main():
-    pass
+    vecteur = np.array([1,-1,0])
+    Angle = anglesysteme(vecteur[0],vecteur[1])
+    print(vecteur, Angle*360/(2*np.pi))
 
 if __name__ == '__main__':
     main()
