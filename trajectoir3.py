@@ -11,11 +11,10 @@
 #cretation graphe aussi
 #
 #
-#
+#attention, quelle vecteur = a quoi, genre surtout axe pour les angle x y etc... vas faloir tester et etre au claire
 #
 #
 #######################################  librairie  ######################################################################################
-
 
 
 # graphique
@@ -255,6 +254,8 @@ def pointImuToGps(pointimu):
 def allignement():
     """"allignement entre les point gps et imu"""
 
+    initialisation(donne[0][0],donne[0][1])     #a changer
+
     #nescecite que l initialisation sois faite  
     nombrePoint = 1 
 
@@ -281,7 +282,23 @@ def allignement():
 
     angle = diffAnglePlanXY(vecteur2,vecteur1)
 
-    
+    list.clear(PointGPS.point)
+    list.clear(PointIMU.point)
+
+    premierPoint = initialisation(donne[0][0],donne[0][1])
+
+    premierPoint.t[0] = premierPoint.t[0]+angle
+
+
+
+
+
+
+
+
+
+
+
 
 
 
