@@ -15,6 +15,8 @@
 
 
 
+
+
 # graphique
 import folium
 from folium.plugins import MarkerCluster
@@ -32,7 +34,11 @@ import math as m
 
 
 
+
+
 #######################################  liste et variable  ######################################################################################
+
+
 
 
 
@@ -81,8 +87,58 @@ donne = [
 
 
 
+#######################################  class point  ######################################################################################
+
+
+
+
+
+#class verifiée
+#class des points IMU
+class PointIMU :
+
+    # liste de tout les point cree, cela permet de les appeler ou  de les compters
+    point = [] 
+    
+    # Les point IMU représente l'etat dans lequel est le capteur au moment de prendre cette mesure. Pour pouvoir appliquer les equations horaire a partire de ce moment précis, il faut stocker dans chaqu'un des point, la position, la vitesse, et l'angle dans lequel se trouve le capteur au moment de la prise de la mesure.
+    def __init__(self,vec_r,vec_v,vec_t):
+        self.__class__.point.append(self)
+        self.r = vec_r  #position
+        self.v = vec_v  #vitesse
+        self.t = vec_t  #position angulaire
+        self.label = 'IMU ' + str(len(self.__class__.point))
+
+    #print
+    def __str__(self):  
+        return f"Point {self.label} = position : {self.r}, vitesse : {self.v}, pos angulaire : {self.t}"
+
+
+
+#class verifiée
+# class des points GPS
+class PointGPS :
+
+    # liste de tout les point cree
+    point = []
+
+    # Pour cette class, stocker les donnees de lattitude et de longitude suffise. Il serait possible de ne pas creer cette class et d'utiliser les donnée brut, mais cela compliquerai grandement la compréension du code plus tard. Comme la mesures des point IMU et des pointGps se fait en meme temp, il est plus simple de creer un point IMU et gps pour chaque point de mesure.  !!!!text a changer!!!!
+    def __init__(self,vec_r):
+        self.__class__.point.append(self)
+        self.r = vec_r  #position
+        self.label = 'gps ' + str(len(self.__class__.point))
+
+    # print
+    def __str__(self):  
+        return f"Point {self.label} = position : {self.r}"
+
+
+
+
+
 ################################### Fonction pour effectuer la rotation d'un vecteur à l'aide de quaternions  #############################
 # code pris de https://pastebin.com/9aVXyUK8 puis adapté
+
+
 
 
 
@@ -137,7 +193,11 @@ def rotationVecteur(vector, vectorAngle):
  
 
 
-#######################################  fonction calule d angle entre vecteurs  ######################################################################################
+
+
+#######################################  fonction calule d'angle entre vecteurs  ######################################################################################
+
+
 
 
 
@@ -231,6 +291,8 @@ def diffAngle3D(vecteur1,vecteur2):
 
 
 
+
+
 #######################################  initialisation #####################################################################################
 
 
@@ -244,7 +306,7 @@ def initialisation(vecacc):
     norme = np.linalg.norm(vecacc) 
     g = np.array([0,norme,0])
 
-    angleDiff = diffAngle3D(vecacc,g)
+    angleDiff = diffAngle3D(vecacc,g)       # -angleDiff ?
 
     vec0 = np.array([0,0,0])
 
@@ -259,46 +321,6 @@ def initialisation(vecacc):
 
 
 
-
-
-
-#######################################  class point  ######################################################################################
-
-
-#class des point IMU
-class PointIMU :
-    # liste de tout les point cree
-    point = [] 
-    
-    def __init__(self,vec_r,vec_v,vec_t):
-        self.__class__.point.append(self)
-        self.r = vec_r  #position
-        self.v = vec_v  #vitesse
-        self.t = vec_t  #position angulaire
-        self.label = 'IMU ' + str(len(self.__class__.point))
-
-    #print
-    def __str__(self):  
-        return f"Point {self.label} = position : {self.r}, vitesse : {self.v}, pos angulaire : {self.t}"
-
-
-
-# class des points GPS
-
-class PointGPS :
-
-    # liste de tout les point cree
-    point = []
-
-    # attention, les vecteurs seront surement en 2d
-    def __init__(self,vec_r):
-        self.__class__.point.append(self)
-        self.r = vec_r  #position
-        self.label = 'gps ' + str(len(self.__class__.point))
-
-    # print
-    def __str__(self):  
-        return f"Point = position : {self.r}"
 
 
 
