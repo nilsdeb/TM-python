@@ -2,7 +2,7 @@
 #
 #
 #
-#
+# verifier chaque une des fonction dans avec toutes les possibilité et tout expliquer
 #
 #
 #lire fichier
@@ -14,25 +14,35 @@
 #######################################  librairie  ######################################################################################
 
 
+
 # graphique
 import folium
 from folium.plugins import MarkerCluster
+
+
 
 # pour les vecteurs et les quaternions
 import numpy as np
 from numpy import linalg as LA
 
+
+
 # pour les maths
 import math as m
 
+
+
 #######################################  liste et variable  ######################################################################################
+
+
 
 #constente du temps entre deux mesures
 temps = 1
 
+
+
 #liste donne, a organiser de cette magniere: [[t,accx....][t2,acc....]]
 #ordre de la liste dans la liste[accx,accy,accz,gyrox,gir0y,giroz,lat,long]
-
 donne = [
     [0.15, -0.25, 0.85, 0.213, -0.076, 0.122, 46.5223, 6.6332],
     [-0.2, 0.6, -0.4, 0.065, 0.158, -0.128, 46.5193, 6.6339],
@@ -71,8 +81,6 @@ donne = [
 
 
 
-
-
 ################################### Fonction pour effectuer la rotation d'un vecteur à l'aide de quaternions  #############################
 # code pris de https://pastebin.com/9aVXyUK8 puis adapté
 
@@ -87,6 +95,8 @@ def quaternion_multiply(q1, q2):
     y = w1 * y2 - x1 * z2 + y1 * w2 + z1 * x2
     z = w1 * z2 + x1 * y2 - y1 * x2 + z1 * w2
     return np.array([w, x, y, z])
+
+
 
 # Fonction pour effectuer la rotation d'un vecteur à l'aide de quaternions
 def rotationVecteur(vector, vectorAngle):
@@ -125,7 +135,10 @@ def rotationVecteur(vector, vectorAngle):
     rotated_vector = rotated_quaternion[1:]
     return rotated_vector
  
+
+
 #######################################  fonction calule d angle entre vecteurs  ######################################################################################
+
 
 
 # fonction verifiée
@@ -174,20 +187,32 @@ def anglesysteme(vecteurX,vecteurY):
     return angle
     
 
-def diffAnglePlanXY (vecteur1,vecteur2):
+
+# fonction verifiée
+def diffAnglePlan (vecteur1,vecteur2):
     """angle pour passer du vecteur 1 au vecteur 2 dans un plan"""
 
-    angle1 = anglesysteme(vecteur1[0],vecteur1[1])
 
+    #calcule l'angle entre les vecteurs et l'axde des abcisses du plan
+    angle1 = anglesysteme(vecteur1[0],vecteur1[1])
     angle2 = anglesysteme(vecteur2[0],vecteur2[1])
 
+    #Comme on veut l'angle pour passer du vecteur1 au vecteur2, il faut soustraire l'angle 2 à l'angle 1
+
+    # return l'angle entre les deux vecteurs. 
     return  (angle2-angle1)
 
-def diffAngle3D(vecteur1,vecteur2):
-    """angle entre deux vecteur dans l'esapce
-    
-    return un vecteur d'angle"""
 
+
+# fonction verifiée
+def diffAngle3D(vecteur1,vecteur2):
+    """angle pour chaque plan entre deux vecteurs dans l'espace
+    
+    return un vecteur d'angle [alpha,beta,gamma]"""
+
+    #le but est de généraliser en 3D ce que on avait avant fait en 2D. Le principe reste le meme, calculer dans chaque plan XY,YZ,ZX, la difference d'angle entre les deux vecteurs. Alpha est l'angle du plan XY, beta du plan YZ et gamma du plan ZX
+
+    #calule non optimiser de chaque angle pour chaque plan pour les deux vecteurs.
     angleAlpha1 = anglesysteme(vecteur1[0],vecteur1[1])
     angleBeta1 = anglesysteme(vecteur1[1],vecteur1[2])
     angleGamma1 = anglesysteme(vecteur1[2],vecteur1[0])
@@ -196,7 +221,14 @@ def diffAngle3D(vecteur1,vecteur2):
     angleBeta2 = anglesysteme(vecteur2[1],vecteur2[2])
     angleGamma2 = anglesysteme(vecteur2[2],vecteur2[0])
 
+
+    print(angleAlpha2,angleBeta2,angleGamma2)
+
+    #Comme on veut les angles pour passer du vecteur1 au vecteur2, il faut soustraire les angles du veteur 2 au angle du vecteur 1
+
+    # return les angles entre les deux vecteurs.
     return np.array([angleAlpha2-angleAlpha1,angleBeta2-angleBeta1,angleGamma2-angleGamma1])
+
 
 
 #######################################  initialisation #####################################################################################
@@ -322,7 +354,7 @@ def allignement():
     vecteur1 = gps1.r-gps0.r
     vecteur2 = gps2.r-gps0.r
 
-    angle = diffAnglePlanXY(vecteur2,vecteur1)
+    angle = diffAnglePlan(vecteur2,vecteur1)
 
     list.clear(PointGPS.point)
     list.clear(PointIMU.point)
