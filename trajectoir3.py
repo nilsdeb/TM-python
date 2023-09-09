@@ -49,7 +49,7 @@ temps = 1
 #0.15, -0.25, 0.85
 
 #liste donne, a organiser de cette magniere: [[t,accx....][t2,acc....]]
-#ordre de la liste dans la liste[accx,accy,accz,gyrox,gir0y,giroz,lat,long]
+#ordre de la liste dans la liste[accx,accy,accz,gyrox,giroy,giroz,lat,long]
 donne = [
     [1,0,0, 0.213, -0.076, 0.122, 46.5223, 6.6332],
     [-0.2, 0.6, -0.4, 0.065, 0.158, -0.128, 46.5193, 6.6339],
@@ -330,9 +330,10 @@ def initialisation(vecacc):
 
 
 
+#fonction verifiée
 def pointIMUtoGPS(point):
         
-    #Comme on est certains que le premier point imu et Gps sont au meme endroit dans l'espace, Pour caluler la positon gps d un point imu, il faut faire la difference entre le pointimu0 et le point imu sur x et y pour connaitre la difference de position(cette operation n est pas dan sle code car la position du point0 = (0,0,0), donc cela reviens a faire -0). Pour transforer la differnece de mettre a degrer gps, il faut diviser la difference par un chiffre. Ensuite il suffi d'additionner les degrer relatif au deplacement avec la position gps initial pour trouver la position gps final
+    #Comme on est certains que le premier point imu et Gps sont au meme endroit dans l'espace, Pour caluler la positon gps d un point imu, il faut faire la difference entre le pointimu0 et le point imu sur x et y pour connaitre la difference de position(cette operation n est pas dans le code car la position du point0 = (0,0,0), donc cela reviens a faire -0). Pour transforer la differnece de mettre a degrer gps, il faut diviser la difference par un chiffre. Ensuite il suffi d'additionner les degrer relatif au deplacement avec la position gps initial pour trouver la position gps final
 
     #dans la fonction allignement, je defini que l'axe x de mon referentiel corespond au lattitude et que mon axe z on longitude
 
@@ -355,66 +356,81 @@ def pointIMUtoGPS(point):
 
 #######################################  fonction  ######################################################################################
 
+
+
+
+
 def lireFichier():
     pass
-
-
-
 
 
 
 def allignement():
     """"allignement entre les point gps et imu"""
 
+    #Si on n allligne pas les point IMu et Gps, les point gps peuvent partire par exemple au nord comm ele trajet réel, mais les point imu vers l'est. Pour calibrer les point imu, il faut calculer l angle de decalage et le corriger en l'incluant dans le point0, dans le theta.gamma
+
+    #faire l'initialisation sans calibrage pour donner le point0
     initialisation(np.array([donne[0][0],donne[0][1],donne[0][2]]))
 
-    #nescecite que l initialisation sois faite  
-    nombrePoint = 1 
+    #variable qui compte le nombre de mesure passé, on commnece a 1 car l'initialisation a deja ete faite
+    nombrePoint = 0
 
-    #permet de creer les point uniquement jusqu il y aie un deplacement de 20 m
-    while np.linalg.norm(PointIMU.point[nombrePoint].r[:1])> 20: 
+    #permet de creer les point uniquement jusqu il y aie un deplacement de 40 m. le but et de ne pas tout calculer mais d'avoir une distence assez grande pour pouvoir etre au dessus de l'incertitude du gps.
+    while np.linalg.norm(PointIMU.point[nombrePoint].r[0:1])< 40: 
 
-        #construi le point IMU il faut changer les indice suivant comment est construite la liste
-        recurence(PointIMU.point[nombrePoint],donne[nombrePoint][0],donne[nombrePoint][1])   
+        #construit les vecteur d'acceleration et de vitesse angulaire pour la recurence
+        vecacc = np.array([donne[nombrePoint][0],donne[nombrePoint][1],donne[nombrePoint][2]])
+        vecvitang = np.array([donne[nombrePoint][3],donne[nombrePoint][4],donne[nombrePoint][5]])
 
-        #construi le point gps de la meme mesure   changer les indices
-        creationPointGps(donne[nombrePoint][3],donne[nombrePoint][4])
+        #construit le point IMU suivant. 
+        recurence(PointIMU.point[nombrePoint],vecacc,vecvitang)   
 
-        # metrs a jour la constente  
-        nombrePoint = nombrePoint + 1
+        # mets a jour la constente  
+        nombrePoint = nombrePoint + 1 
 
+    #point gps du point 0
+    gps0 = creationPointGps(donne[0][-2],donne[0][-1])
+
+    # Pour le dernier point imu creer, le point gps1 et le point gps mesurer a cette instant de mesure
+    gps1 = creationPointGps(donne[nombrePoint][-2],donne[nombrePoint][-1])
+
+    # Creer le point gps obtenu grace a l'imu
     gps2 = pointIMUtoGPS(PointIMU.point[-1])
 
-    gps1 = creationPointGps(donne[nombrePoint][3],donne[nombrePoint][4])        # a changer les indices
-
-    gps0 = creationPointGps(donne[0][3],donne[0][4])        #a changer
-
+    #creation de deux vecteur
     vecteur1 = gps1.r-gps0.r
     vecteur2 = gps2.r-gps0.r
 
+    #donne la difference d'angle entre les deux vecteurs. C'est cette difference d'angle qui permettra d'alligner els point gps et les point imu.
     angle = diffAnglePlan(vecteur2,vecteur1)
 
-    list.clear(PointGPS.point)
-    list.clear(PointIMU.point)
+    #comme tout les point imu doive etre corriger avec le nouvelle angle, il est plus simple d'effacer tout les point construit jusque la et recommnecer la creation de tout les point.
+    PointGPS.point.clear()
+    PointIMU.point.clear()
 
-    premierPoint = initialisation(donne[0][0],donne[0][1])
+    #creation du premier point pour la deuxieme fois
+    premierPoint = initialisation(np.array([donne[0][0],donne[0][1],donne[0][2]]))
 
+    #correction de l'angle theta dans le point0, cela allignera les chemin du gps et celui de l'imu
     premierPoint.t[0] = premierPoint.t[0]+angle
-
-
-
-
 
 
 
 def recurence(pointIMU,vecteurAcc,vecteurAng):
     """passage entre n et n+1"""
 
-    # equation angulaire pour obtenir theta_n+1   //  new_t = thetan+1
+    #en utilisant les equation horaires, avec le point de mesure, le vecteur acceleration et celui de la vitesse angulaire mesurer au point de mesure, il est physiquement possible de savoir ou se fera la prochaine mesure.
+
+    # equation angulaire pour obtenir theta_n+1   //  new_t = theta n+1
     newOmega = vecteurAng*temps + pointIMU.t
+
+    # comme le capteur n est pas fixer a un rail, il peut faire des mouvements dotatif. Cela implique que il perd le referentiel de la mesure n-1. avec les equation angulaire, tetha et omega, cela permet de faire une projection du vecteur de le referentiel de mesure au referentiel unique.
 
     # passage de l'acceleration de l'IMU dans le referentiel unique
     accelUnique = rotationVecteur(newOmega,vecteurAcc)
+
+    #utilisation du vecteur d'acceleration projeter dans le referentiel unique pour deduire le prochain point.
 
     # equation horaire pour obtenir r_n+1 et v_n+1
     new_r = accelUnique*1/2*(temps**2) + pointIMU.v*temps + pointIMU.r
@@ -425,45 +441,44 @@ def recurence(pointIMU,vecteurAcc,vecteurAng):
 
 
 
-
+# permet plus simplement de creer des point gps
 def creationPointGps (long, lat):
 
+    # creer un vecteur avec deux coordonnées, lattitude et longitude
     position = np.array([long,lat])
 
+    #return un point gps
     return PointGPS(position)
 
 
 
-
-
-
-
-
-
-
 def creationGraphe():
-    # creation de la carte
-    m = folium.Map(location=[ref_lat, ref_lon], zoom_start=15)
 
+    # creation de la carte
+    m = folium.Map(location=[donne[0][-2],donne[0][-1]], zoom_start=15)
+
+    
     for point in PointIMU.point :
 
-       #imutogps a bien verifier quoi fait quoi
+        #cette etape revient a faire la meme chose que dans point imu to gps mais nous ne pouvons pas utiliser cette fonction ici car cela crereai des point gps, qui seront inditengable des point imu. la carte en devient donc incompresible. Pour comprendre les 4 prochaine ligne de code, il faut se referer a la fonction ImuToGps
+        lat_deplacement = point.r[0] / 111111
 
-        # creer les point en rouge pour l IMU et l ajoute dans son cluster
+        lon_deplacement = point.r[2] / (111111 * np.cos(np.radians(donne[0][-2])))
+
+        lat = donne[0][-2] + lat_deplacement      
+        lon = donne[0][-1] + lon_deplacement
+
+        # creer les point en rouge Qui symbolise les point imu, mais il les rentres sous forme gps pour que il puisse l'afficher sur la carte. Il creer un cluster et cela permet de mettre tout les point imu dans ce cluster
         folium.Marker(location=[lat, lon], popup=point.label, icon=folium.Icon(color='red')).add_to(m)
 
     # boucle pour chaque point gps
     for point in PointGPS.point :
 
-        # sors les coordonnées
-        lat = point.r[0]
-        lon = point.r[1]
-
         # creer les point en bleu pour le gps et l ajoute dans son cluster
-        folium.Marker(location=[lat, lon], popup=point.label, icon=folium.Icon(color='blue')).add_to(m)
+        folium.Marker(location=[point.r[0], point.r[1]], popup=point.label, icon=folium.Icon(color='blue')).add_to(m)
 
-    # affichage de la carte
-    m.save('map4.html')
+    # sauve la carte sous le nom de map4
+    m.save('map4111.html')
 
 
 
@@ -477,26 +492,27 @@ def creationGraphe():
 def main():
 
     #lireFichier()
-    #allignement()
-    #for instances in donne :
-        #vecacc = np.array([donne[instances][0],donne[instances][1],donne[instances][2]])        #a cahnger
-        #vecang = np.array([donne[instances][4],donne[instances][5],donne[instances][6]])        #a cahnger
 
-        #recurence(PointIMU.point[-1],vecacc,vecang)
+    #permet de creer le premier avec toute ces correction
+    allignement()
 
-        #creationPointGps(donne[instances][7],donne[instances][8])
+    #boucle qui crée tout les poin IMU par recurence et tout les point gps
 
-    #creationGraphe()
+    #pas possible de faire sans passé par cette petite variable a
+    a = 0
+    for donnes in donne :
+        
+        vecacc = np.array([donne[a][0],donne[a][1],donne[a][2]])
+        vecang = np.array([donne[a][4],donne[a][5],donne[a][6]])
 
-    vec = np.array([donne[0][0],donne[0][1],donne[0][2]])
+        recurence(PointIMU.point[-1],vecacc,vecang)
 
+        creationPointGps(donne[a][-2],donne[a][-1])
 
-    
-    a = initialisation(vec)
+        a = a+1
 
-    b = rotationVecteur(vec,a.t)
-
-    print(a.t*360/(2*m.pi), b)
+    #creation du plan
+    creationGraphe()
 
     
 
