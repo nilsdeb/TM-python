@@ -6,6 +6,7 @@
 #
 #
 #lire fichier
+#quaternion / quelle angle vraiment est a utiliser dans Point imu. theta?
 #
 #
 # attention, quelle vecteur = a quoi, genre surtout axe pour les angle x y etc... vas faloir tester et etre au claire
@@ -45,12 +46,12 @@ import math as m
 #constente du temps entre deux mesures
 temps = 1
 
-
+#0.15, -0.25, 0.85
 
 #liste donne, a organiser de cette magniere: [[t,accx....][t2,acc....]]
 #ordre de la liste dans la liste[accx,accy,accz,gyrox,gir0y,giroz,lat,long]
 donne = [
-    [0.15, -0.25, 0.85, 0.213, -0.076, 0.122, 46.5223, 6.6332],
+    [1,0,0, 0.213, -0.076, 0.122, 46.5223, 6.6332],
     [-0.2, 0.6, -0.4, 0.065, 0.158, -0.128, 46.5193, 6.6339],
     [0.35, 0.3, 0.05, -0.092, 0.126, -0.057, 46.5268, 6.6148],
     [-0.08, -0.18, 0.13, 0.142, -0.109, 0.084, 46.5239, 6.6257],
@@ -139,7 +140,9 @@ class PointGPS :
 # code pris de https://pastebin.com/9aVXyUK8 puis adapté
 
 
+#ce que j ai comme angle c est pas pile les angles, c est la difference d angle dans chaque plan entre les deux vecteur. Est ce que que on ne dois pas repasser par le cercle trigonometrique est reposer des condition, si angle entre 0 et 90 alors le vecteur sera dans ce secteur, si blabla? je dis pas les quaternions sont inutile car surement a la fin pour effectuer la rotation il y en auras peut etre besoin mais il faut savoir avec quel angle et pk
 
+# en attendant d avoir suffisament reflechi au probleme, je dis que cette rotation et fonctionnel et corrige le reste du code en ignorant celui ci. Ce n est que cette fonction a modifier mais le reste du cheminnement et du code reste juste meme avec cette rotation fausse.
 
 
 # Fonction pour multiplier deux quaternions (utiliser dans rotation)
@@ -281,9 +284,6 @@ def diffAngle3D(vecteur1,vecteur2):
     angleBeta2 = anglesysteme(vecteur2[1],vecteur2[2])
     angleGamma2 = anglesysteme(vecteur2[2],vecteur2[0])
 
-
-    print(angleAlpha2,angleBeta2,angleGamma2)
-
     #Comme on veut les angles pour passer du vecteur1 au vecteur2, il faut soustraire les angles du veteur 2 au angle du vecteur 1
 
     # return les angles entre les deux vecteurs.
@@ -296,6 +296,8 @@ def diffAngle3D(vecteur1,vecteur2):
 #######################################  initialisation #####################################################################################
 
 
+
+#fonction vérifiée
 def initialisation(vecacc):
     """creer le referentiel unique
 
@@ -303,24 +305,50 @@ def initialisation(vecacc):
     
     return le point IMU 0"""
 
-    norme = np.linalg.norm(vecacc) 
-    g = np.array([0,norme,0])
+    # Pour savoir dans quelle orientation le capteur est au début de la mesure, il faut que au debut de la mesure, le capteur ne bouge pas. Les seuls acceleration qu il mesurera sera alors que g. je fais donc la norme du vecteur(qui devrai toujours etre egal a g) et je creer un vecteur artificiel g avec comme composant(0,g,0). EN faisant la difference d'angle entre les deux vecteurs, on a la difference de position angulaire entre le capteur et le referentiel unique.
 
-    angleDiff = diffAngle3D(vecacc,g)       # -angleDiff ?
+    # calcule la norme
+    norme = np.linalg.norm(vecacc)
 
+    #creer le vecteur artificiel g
+    g = np.array([0,-norme,0])
+
+    #calule la difference d'angle entre g et le vecteurs d'acceleration mesurer par le capteur. Logiquement les angles doivent s'aditionner.
+    angleDiff = diffAngle3D(vecacc,g)      
+
+    #comme c'est le premier point et que au début de la mesure, il faut pauser la capteur quelque seconde sans le bouger, alors nous pouvons dire que sa vitesse initial = 0. Comme on creer le referentiel avec ce point, pour ne pas me compliquer la vis, je dis que ce premier point est le point central de mon referentiel, le point (0,0,0). 
+
+    #creation d'un vecteur (0,0,0) pour pouvoir correctement completer les informations pour creer le premier point imu.
     vec0 = np.array([0,0,0])
 
+    #creation de premier point imu
     return PointIMU(vec0,vec0,angleDiff)
 
 
 
+#######################################  Point IMU to Point GPS #####################################################################################
 
 
 
+def pointIMUtoGPS(point):
+        
+    #Comme on est certains que le premier point imu et Gps sont au meme endroit dans l'espace, Pour caluler la positon gps d un point imu, il faut faire la difference entre le pointimu0 et le point imu sur x et y pour connaitre la difference de position(cette operation n est pas dan sle code car la position du point0 = (0,0,0), donc cela reviens a faire -0). Pour transforer la differnece de mettre a degrer gps, il faut diviser la difference par un chiffre. Ensuite il suffi d'additionner les degrer relatif au deplacement avec la position gps initial pour trouver la position gps final
+
+    #dans la fonction allignement, je defini que l'axe x de mon referentiel corespond au lattitude et que mon axe z on longitude
+
+    # calcule la difference d angle entre le point de ref(0,0,0) et le point donner  /111111 parce que c est 1 metre en degrer pour le gps
+    lat_deplacement = point.r[0] / 111111
+
+    # Comme plus on se raproche des poles, plus les degres de longitude devienne plus petit, la difference entre m et degrer devient variable. Le cos de la position permet de corriger cette variation. Comme je suis sur des changement de position petit, je neglige le changement de position et prend la position de reference pour corriger la variation et non celle juste avant.
+    lon_deplacement = point.r[2] / (111111 * np.cos(np.radians(donne[0][-2])))
+
+    # additionne la difference avec le point de reference
+    lat = donne[0][-2] + lat_deplacement     
+    lon = donne[0][-1] + lon_deplacement
 
 
-
-
+    #return un point Gps avec les coordonné gps que a le point imu
+    return creationPointGps(lat,lon)
 
 
 
@@ -330,18 +358,6 @@ def initialisation(vecacc):
 def lireFichier():
     pass
 
-
-
-def pointIMUtoGPS(point):
-    # calcule la difference d angle entre le point de ref(0,0,0) et le point donner  /111111 parce que c est 1 metre en degrer pour le gps
-            lat_deplacement = point.r[1] / 111111
-
-            # le cos et pour corriger les ligne qui se raproche ne fonction de la lat geometrie de la terre...
-            lon_deplacement = point.r[0] / (111111 * np.cos(np.radians(ref_lat)))
-
-            # additionne la deifference avec le point de reference
-            lat = ref_lat + lat_deplacement
-            lon = ref_lon + lon_deplacement
 
 
 
@@ -431,15 +447,7 @@ def creationGraphe():
 
     for point in PointIMU.point :
 
-        # calcule la difference d angle entre le point de ref(0,0,0) et le point donner  /111111 parce que c est 1 metre en degrer pour le gps
-        lat_deplacement = point.r[1] / 111111
-
-        # le cos et pour corriger les ligne qui se raproche ne fonction de la lat geometrie de la terre...
-        lon_deplacement = point.r[0] / (111111 * np.cos(np.radians(ref_lat)))
-
-        # additionne la deifference avec le point de reference
-        lat = donne[0][3] + lat_deplacement     #changer le deuxième indice
-        lon = donne[0][3] + lon_deplacement
+       #imutogps a bien verifier quoi fait quoi
 
         # creer les point en rouge pour l IMU et l ajoute dans son cluster
         folium.Marker(location=[lat, lon], popup=point.label, icon=folium.Icon(color='red')).add_to(m)
@@ -480,12 +488,15 @@ def main():
 
     #creationGraphe()
 
+    vec = np.array([donne[0][0],donne[0][1],donne[0][2]])
+
 
     
-    vecx = 0
-    vecy = 1
+    a = initialisation(vec)
 
-    print(anglesysteme(vecx,vecy))
+    b = rotationVecteur(vec,a.t)
+
+    print(a.t*360/(2*m.pi), b)
 
     
 
