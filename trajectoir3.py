@@ -2,14 +2,13 @@
 #
 #
 #
-# verifier chaque une des fonction dans avec toutes les possibilité et tout expliquer
+#
 #
 #
 #lire fichier
-#quaternion / quelle angle vraiment est a utiliser dans Point imu. theta?
 #
 #
-# attention, quelle vecteur = a quoi, genre surtout axe pour les angle x y etc... vas faloir tester et etre au claire
+#
 #
 #
 #######################################  librairie  ######################################################################################
@@ -44,7 +43,7 @@ import math as m
 
 
 #constente du temps entre deux mesures
-temps = 1
+temps = 0.1
 
 #0.15, -0.25, 0.85
 
@@ -94,7 +93,6 @@ donne = [
 
 
 
-#class verifiée
 #class des points IMU
 class PointIMU :
 
@@ -115,7 +113,6 @@ class PointIMU :
 
 
 
-#class verifiée
 # class des points GPS
 class PointGPS :
 
@@ -139,10 +136,6 @@ class PointGPS :
 ################################### Fonction pour effectuer la rotation d'un vecteur à l'aide de quaternions  #############################
 # code pris de https://pastebin.com/9aVXyUK8 puis adapté
 
-
-#ce que j ai comme angle c est pas pile les angles, c est la difference d angle dans chaque plan entre les deux vecteur. Est ce que que on ne dois pas repasser par le cercle trigonometrique est reposer des condition, si angle entre 0 et 90 alors le vecteur sera dans ce secteur, si blabla? je dis pas les quaternions sont inutile car surement a la fin pour effectuer la rotation il y en auras peut etre besoin mais il faut savoir avec quel angle et pk
-
-# en attendant d avoir suffisament reflechi au probleme, je dis que cette rotation et fonctionnel et corrige le reste du code en ignorant celui ci. Ce n est que cette fonction a modifier mais le reste du cheminnement et du code reste juste meme avec cette rotation fausse.
 
 
 # Fonction pour multiplier deux quaternions (utiliser dans rotation)
@@ -171,12 +164,19 @@ def rotationVecteur(vector, vectorAngle):
     beta = vectorAngle[1]
     gamma = vectorAngle[2]
 
+    #optimisation
+    sinAlpha = np.sin(alpha/2)
+    cosBeta = np.cos(beta/2)
+    cosGamma = np.cos(gamma/2)
+    cosAlpha = np.cos(alpha/2)
+    sinBeta = np.sin(beta/2)
+    sinGamma = np.sin(gamma/2)
 
     # Calcul des composantes du quaternion
-    qx = np.sin(alpha/2) * np.cos(beta/2) * np.cos(gamma/2) + np.cos(alpha/2) * np.sin(beta/2) * np.sin(gamma/2)
-    qy = np.cos(alpha/2) * np.sin(beta/2) * np.cos(gamma/2) - np.sin(alpha/2) * np.cos(beta/2) * np.sin(gamma/2)
-    qz = np.cos(alpha/2) * np.cos(beta/2) * np.sin(gamma/2) + np.sin(alpha/2) * np.sin(beta/2) * np.cos(gamma/2)
-    qw = np.cos(alpha/2) * np.cos(beta/2) * np.cos(gamma/2) - np.sin(alpha/2) * np.sin(beta/2) * np.sin(gamma/2)
+    qx = sinAlpha * cosBeta * cosGamma + cosAlpha * sinBeta * sinGamma
+    qy = cosAlpha * sinBeta * cosGamma - sinAlpha * cosBeta * sinGamma
+    qz = cosAlpha * cosBeta * sinGamma + sinAlpha * sinBeta * cosGamma
+    qw = cosAlpha * cosBeta * cosGamma - sinAlpha * sinBeta * sinGamma
  
     # Normalisation du quaternion
     quaternion = np.array([qw, qx, qy, qz]) / LA.norm([qw, qx, qy, qz])
@@ -204,93 +204,66 @@ def rotationVecteur(vector, vectorAngle):
 
 
 
-# fonction verifiée
-def anglesysteme(vecteurX,vecteurY):
-    """calule l'angle par rapport a l'axe des abcisses du plan
+def diffAngleVecteur(vecteur1, vecteur2, precision):
+    """difference d'angle entre vecteur 2 et vecteur 1
 
-    !besoin des composant du vectuer en 2D!"""
-
-
-    #calcule la norme du vecteur (vecteurX, vecteurY)
-    norme = m.sqrt(vecteurX**2+vecteurY**2)
-
-
-    #si la norme du vecteur = 0, il doit / 0 ce qui est impossible. On peut physiquement dire que si la norme du vecteur est nul, alors l'angle entre un point et l'axe des absices est nul. La condition est donc pausée pour eviter ce problèmes
-
-    # condition que la norme soie differente que 0
-    if norme != 0:
-
-        #calcule sin et cos du vecteur avec l'axe des abcisses
-        sin = vecteurY/norme
-        cos = vecteurX/norme
+    !!c'est pour passer du vecteur2 au vecteur1, pas l'inverse!!
+    
+    vecteur1 = par example g
+    
+    vecteur2 = par example premiere acceleration
+    
+    precision = nombre d'angle que on test pour x, y et z"""
 
 
-        #comme on cherche un angle sur 2 pi et non que sur pi/2, il faut donc ajouter l'information du sin et passé par le cercle trigonometrique pour savoir dans quelle cardan et le vecteur. Avec cette information en +, on peut déduire l'angle sur 2 pi
+    #angle de base defini a 0 
+    angleX,angleY,angleZ = 0,0,0
+
+    #liste qui me permete de stocker tout les normes
+    liste = []
+
+    #dico qui me premet de stocker les angles avec comme indice la norme
+    dico = {}
+
+    #boucle qui teste tout les angles
+    for _ in range(precision):  # Première boucle
+    
+        for _ in range(precision):  # Deuxième boucle
         
-        #condition pour que l'angle soie dans le cadran 1 ou 2
-        if sin >= 0 and cos > 0 or sin > 0 and cos < 0:      
+            for _ in range(precision):  # Troisième boucle
+            
+                #creer un vecteur angle avec les angle tester a ce moment
+                vectorAngle = np.array([angleX,angleY,angleZ])
 
-            angle = m.acos(cos)
+                # calcule le vecteur en tournant avec les angles tests
+                f2 = rotationVecteur(vecteur2,vectorAngle)
 
-        #il considere sin90 = -0, donc si mon vecteur est pile a l angle droit, il me mets 270 au lieu de 90. Je rajoute cette condition pour le cas précis ou l'angle est a 90 degrer par rapport au l'axe des absisse
-        if sin == 1 and cos == 0 : 
+                # Calculez la norme de la différence entre f2 et g
+                diff_norm = np.linalg.norm(f2-vecteur1)               
 
-            angle = m.pi/2
+                liste.append(diff_norm)
 
-        #condition pour le cadran 3 ou 4
-        else :
-            angle = m.pi*2-m.acos(cos)
-    
-    # suite de la condition si norme = 0
-    else :
+                dico[diff_norm] = vectorAngle
 
-        angle = 0
+                #print("vector_angle {0}//////// f2 {1}//////// g-f2 {2}//////// diff_norme {3}".format(vectorAngle,f2,vecteur1-f2,diff_norm))
 
-    # return angle entre le vecteur et l'axe des abcisses
-    return angle
-    
+                angleZ += 2*m.pi / precision
 
 
-# fonction verifiée
-def diffAnglePlan (vecteur1,vecteur2):
-    """angle pour passer du vecteur 1 au vecteur 2 dans un plan"""
+            angleY += 2*m.pi / precision
 
+            #besoin de remettre a 0 les angle a chaque boucles
+            angleZ = 0  
 
-    #calcule l'angle entre les vecteurs et l'axde des abcisses du plan
-    angle1 = anglesysteme(vecteur1[0],vecteur1[1])
-    angle2 = anglesysteme(vecteur2[0],vecteur2[1])
+        angleX += 2*m.pi / precision
 
-    #Comme on veut l'angle pour passer du vecteur1 au vecteur2, il faut soustraire l'angle 2 à l'angle 1
+        angleY = 0
 
-    # return l'angle entre les deux vecteurs. 
-    return  (angle2-angle1)
+    #cherche la plus petite norme
+    a = min(liste)
 
-
-
-# fonction verifiée
-def diffAngle3D(vecteur1,vecteur2):
-    """angle pour chaque plan entre deux vecteurs dans l'espace
-    
-    return un vecteur d'angle [alpha,beta,gamma]"""
-
-    #le but est de généraliser en 3D ce que on avait avant fait en 2D. Le principe reste le meme, calculer dans chaque plan XY,YZ,ZX, la difference d'angle entre les deux vecteurs. Alpha est l'angle du plan XY, beta du plan YZ et gamma du plan ZX
-
-    #calule non optimiser de chaque angle pour chaque plan pour les deux vecteurs.
-    angleAlpha1 = anglesysteme(vecteur1[0],vecteur1[1])  #planXY
-    angleBeta1 = anglesysteme(vecteur1[1],vecteur1[2])  #planYZ
-    angleGamma1 = anglesysteme(vecteur1[2],vecteur1[0]) #planZX
-
-    angleAlpha2 = anglesysteme(vecteur2[0],vecteur2[1])
-    angleBeta2 = anglesysteme(vecteur2[1],vecteur2[2])
-    angleGamma2 = anglesysteme(vecteur2[2],vecteur2[0])
-
-    # Comme on veut les angles pour passer du vecteur1 au vecteur2, il faut soustraire les angles du veteur 2 au angle du vecteur 1
-
-    # return les angles entre les deux vecteurs. 
-    # 
-    # 
-    # A cause du faite que les gyroscope envoie la norme sur x,y,z alpha vas sur z,beta vas sur x
-    return np.array([-(angleBeta2-angleBeta1),(angleGamma2-angleGamma1),-(angleAlpha2-angleAlpha1)])
+    #retourne
+    return dico[a]
 
 
 
@@ -300,7 +273,6 @@ def diffAngle3D(vecteur1,vecteur2):
 
 
 
-#fonction vérifiée
 def initialisation(vecacc):
     """creer le referentiel unique
 
@@ -317,7 +289,7 @@ def initialisation(vecacc):
     g = np.array([0,-norme,0])
 
     #calule la difference d'angle entre g et le vecteurs d'acceleration mesurer par le capteur. Logiquement les angles doivent s'aditionner.
-    angleDiff = diffAngle3D(vecacc,g)      
+    angleDiff = diffAngleVecteur(g,vecacc,50) 
 
     #comme c'est le premier point et que au début de la mesure, il faut pauser la capteur quelque seconde sans le bouger, alors nous pouvons dire que sa vitesse initial = 0. Comme on creer le referentiel avec ce point, pour ne pas me compliquer la vis, je dis que ce premier point est le point central de mon referentiel, le point (0,0,0). 
 
@@ -333,7 +305,6 @@ def initialisation(vecacc):
 
 
 
-#fonction verifiée
 def pointIMUtoGPS(point):
         
     #Comme on est certains que le premier point imu et Gps sont au meme endroit dans l'espace, Pour caluler la positon gps d un point imu, il faut faire la difference entre le pointimu0 et le point imu sur x et y pour connaitre la difference de position(cette operation n est pas dans le code car la position du point0 = (0,0,0), donc cela reviens a faire -0). Pour transforer la differnece de mettre a degrer gps, il faut diviser la difference par un chiffre. Ensuite il suffi d'additionner les degrer relatif au deplacement avec la position gps initial pour trouver la position gps final
@@ -379,8 +350,8 @@ def allignement():
     #variable qui compte le nombre de mesure passé, on commnece a 1 car l'initialisation a deja ete faite
     nombrePoint = 0
 
-    #permet de creer les point uniquement jusqu il y aie un deplacement de 40 m. le but et de ne pas tout calculer mais d'avoir une distence assez grande pour pouvoir etre au dessus de l'incertitude du gps.
-    while np.linalg.norm(PointIMU.point[nombrePoint].r[0:1])< 40: 
+    #permet de creer les point uniquement jusqu il y aie un deplacement de 10 m. le but et de ne pas tout calculer mais d'avoir une distence assez grande pour pouvoir etre au dessus de l'incertitude du gps.
+    while np.linalg.norm(PointIMU.point[nombrePoint].r[0:1])< 1: 
 
         #construit les vecteur d'acceleration et de vitesse angulaire pour la recurence
         vecacc = np.array([donne[nombrePoint][0],donne[nombrePoint][1],donne[nombrePoint][2]])
@@ -390,7 +361,7 @@ def allignement():
         recurence(PointIMU.point[nombrePoint],vecacc,vecvitang)   
 
         # mets a jour la constente  
-        nombrePoint = nombrePoint + 1 
+        nombrePoint += 1 
 
     #point gps du point 0
     gps0 = creationPointGps(donne[0][-2],donne[0][-1])
@@ -401,12 +372,22 @@ def allignement():
     # Creer le point gps obtenu grace a l'imu
     gps2 = pointIMUtoGPS(PointIMU.point[-1])
 
-    #creation de deux vecteur
-    vecteur1 = gps1.r-gps0.r
-    vecteur2 = gps2.r-gps0.r
+    #creation du vecteur representant le GPS
+    vecteur1 = np.array([gps1.r[0]-gps0.r[0],gps1.r[1]-gps0.r[1],0])
+    norme1 = np.linalg.norm(vecteur1)
+
+    #avoir le vecteur normer
+    vecteur2 = np.array([vecteur1[0]/norme1,vecteur1[1]/norme1,0])
+
+    #creation du vecteur representant l IMU
+    vecteur3 = np.array([gps2.r[0]-gps0.r[0],gps2.r[1]-gps0.r[1],0])
+    norme3 = np.linalg.norm(vecteur3)
+
+    #avoir le vecteur normer
+    vecteur4 = np.array([vecteur3[0]/norme3,vecteur3[1]/norme3,0])
 
     #donne la difference d'angle entre les deux vecteurs. C'est cette difference d'angle qui permettra d'alligner els point gps et les point imu.
-    angle = diffAnglePlan(vecteur2,vecteur1)
+    angle = diffAngleVecteur(vecteur2,vecteur4,50)
 
     #comme tout les point imu doive etre corriger avec le nouvelle angle, il est plus simple d'effacer tout les point construit jusque la et recommnecer la creation de tout les point.
     PointGPS.point.clear()
@@ -416,7 +397,7 @@ def allignement():
     premierPoint = initialisation(np.array([donne[0][0],donne[0][1],donne[0][2]]))
 
     #correction de l'angle theta dans le point0, cela allignera les chemin du gps et celui de l'imu
-    premierPoint.t[2] = premierPoint.t[2]+angle
+    premierPoint.t = premierPoint.t+angle
 
 
 
@@ -481,9 +462,7 @@ def creationGraphe():
         folium.Marker(location=[point.r[0], point.r[1]], popup=point.label, icon=folium.Icon(color='blue')).add_to(m)
 
     # sauve la carte sous le nom de map4
-    m.save('map4111.html')
-
-
+    m.save('map2.html')
 
 
 
@@ -497,37 +476,25 @@ def main():
     #lireFichier()
 
     #permet de creer le premier avec toute ces correction
-    #allignement()
+    allignement()
 
     #boucle qui crée tout les poin IMU par recurence et tout les point gps
 
     #pas possible de faire sans passé par cette petite variable a
-    #a = 0
-    #for donnes in donne :
+    a = 0
+    for i in donne :
         
-        #vecacc = np.array([donne[a][0],donne[a][1],donne[a][2]])
-        #vecang = np.array([donne[a][4],donne[a][5],donne[a][6]])
+        vecacc = np.array([donne[a][0],donne[a][1],donne[a][2]])
+        vecang = np.array([donne[a][4],donne[a][5],donne[a][6]])
 
-        #recurence(PointIMU.point[-1],vecacc,vecang)
+        recurence(PointIMU.point[-1],vecacc,vecang)
 
-        #creationPointGps(donne[a][-2],donne[a][-1])
+        creationPointGps(donne[a][-2],donne[a][-1])
 
-        #a = a+1
+        a += 1
 
     #creation du plan
-    #creationGraphe()
-
-
-    vec = np.array([0,0,1])
-    vec1 = np.array([1,0,0])
-
-    angle = diffAngle3D(vec1,vec)
-
-    print(angle)
-
-    newvec = rotationVecteur(vec1,angle)
-
-    print(newvec)
+    creationGraphe()
 
 
     
