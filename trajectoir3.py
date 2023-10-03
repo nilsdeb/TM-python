@@ -276,18 +276,21 @@ def diffAngle3D(vecteur1,vecteur2):
     #le but est de généraliser en 3D ce que on avait avant fait en 2D. Le principe reste le meme, calculer dans chaque plan XY,YZ,ZX, la difference d'angle entre les deux vecteurs. Alpha est l'angle du plan XY, beta du plan YZ et gamma du plan ZX
 
     #calule non optimiser de chaque angle pour chaque plan pour les deux vecteurs.
-    angleAlpha1 = anglesysteme(vecteur1[0],vecteur1[1])
-    angleBeta1 = anglesysteme(vecteur1[1],vecteur1[2])
-    angleGamma1 = anglesysteme(vecteur1[2],vecteur1[0])
+    angleAlpha1 = anglesysteme(vecteur1[0],vecteur1[1])  #planXY
+    angleBeta1 = anglesysteme(vecteur1[1],vecteur1[2])  #planYZ
+    angleGamma1 = anglesysteme(vecteur1[2],vecteur1[0]) #planZX
 
     angleAlpha2 = anglesysteme(vecteur2[0],vecteur2[1])
     angleBeta2 = anglesysteme(vecteur2[1],vecteur2[2])
     angleGamma2 = anglesysteme(vecteur2[2],vecteur2[0])
 
-    #Comme on veut les angles pour passer du vecteur1 au vecteur2, il faut soustraire les angles du veteur 2 au angle du vecteur 1
+    # Comme on veut les angles pour passer du vecteur1 au vecteur2, il faut soustraire les angles du veteur 2 au angle du vecteur 1
 
-    # return les angles entre les deux vecteurs.
-    return np.array([angleAlpha2-angleAlpha1,angleBeta2-angleBeta1,angleGamma2-angleGamma1])
+    # return les angles entre les deux vecteurs. 
+    # 
+    # 
+    # A cause du faite que les gyroscope envoie la norme sur x,y,z alpha vas sur z,beta vas sur x
+    return np.array([-(angleBeta2-angleBeta1),(angleGamma2-angleGamma1),-(angleAlpha2-angleAlpha1)])
 
 
 
@@ -413,7 +416,7 @@ def allignement():
     premierPoint = initialisation(np.array([donne[0][0],donne[0][1],donne[0][2]]))
 
     #correction de l'angle theta dans le point0, cela allignera les chemin du gps et celui de l'imu
-    premierPoint.t[0] = premierPoint.t[0]+angle
+    premierPoint.t[2] = premierPoint.t[2]+angle
 
 
 
@@ -494,25 +497,38 @@ def main():
     #lireFichier()
 
     #permet de creer le premier avec toute ces correction
-    allignement()
+    #allignement()
 
     #boucle qui crée tout les poin IMU par recurence et tout les point gps
 
     #pas possible de faire sans passé par cette petite variable a
-    a = 0
-    for donnes in donne :
+    #a = 0
+    #for donnes in donne :
         
-        vecacc = np.array([donne[a][0],donne[a][1],donne[a][2]])
-        vecang = np.array([donne[a][4],donne[a][5],donne[a][6]])
+        #vecacc = np.array([donne[a][0],donne[a][1],donne[a][2]])
+        #vecang = np.array([donne[a][4],donne[a][5],donne[a][6]])
 
-        recurence(PointIMU.point[-1],vecacc,vecang)
+        #recurence(PointIMU.point[-1],vecacc,vecang)
 
-        creationPointGps(donne[a][-2],donne[a][-1])
+        #creationPointGps(donne[a][-2],donne[a][-1])
 
-        a = a+1
+        #a = a+1
 
     #creation du plan
-    creationGraphe()
+    #creationGraphe()
+
+
+    vec = np.array([0,0,1])
+    vec1 = np.array([1,0,0])
+
+    angle = diffAngle3D(vec1,vec)
+
+    print(angle)
+
+    newvec = rotationVecteur(vec1,angle)
+
+    print(newvec)
+
 
     
 
