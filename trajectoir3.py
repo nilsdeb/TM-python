@@ -1,25 +1,8 @@
-#######################################  a faire  ######################################################################################
-#
-#
-#
-#
-#
-#
-#lire fichier
-#
-#
-#
-#
-#
 #######################################  librairie  ######################################################################################
-
-
-
 
 
 # graphique
 import folium
-from folium.plugins import MarkerCluster
 
 
 
@@ -34,8 +17,6 @@ import math as m
 
 
 
-
-
 #######################################  liste et variable  ######################################################################################
 
 
@@ -43,47 +24,12 @@ import math as m
 
 
 #constente du temps entre deux mesures
-temps = 0.1
+temps = 2
 
-#0.15, -0.25, 0.85
 
 #liste donne, a organiser de cette magniere: [[t,accx....][t2,acc....]]
 #ordre de la liste dans la liste[accx,accy,accz,gyrox,giroy,giroz,lat,long]
-donne = [
-    [1,0,0, 0.213, -0.076, 0.122, 46.5223, 6.6332],
-    [-0.2, 0.6, -0.4, 0.065, 0.158, -0.128, 46.5193, 6.6339],
-    [0.35, 0.3, 0.05, -0.092, 0.126, -0.057, 46.5268, 6.6148],
-    [-0.08, -0.18, 0.13, 0.142, -0.109, 0.084, 46.5239, 6.6257],
-    [0.12, -0.08, -0.02, 0.077, -0.061, -0.045, 46.5251, 6.6263],
-    [0.18, -0.06, 0.32, -0.115, 0.124, 0.176, 46.5241, 6.6267],
-    [-0.28, 0.17, -0.07, 0.032, -0.067, -0.146, 46.5249, 6.6249],
-    [0.03, 0.12, -0.22, 0.128, -0.149, 0.055, 46.5215, 6.6319],
-    [-0.22, -0.35, 0.25, -0.149, 0.078, 0.115, 46.5261, 6.6354],
-    [0.05, 0.18, -0.28, 0.095, -0.167, 0.022, 46.5229, 6.6317],
-    [-0.16, -0.27, 0.23, 0.073, 0.101, 0.032, 46.5234, 6.6351],
-    [0.23, -0.08, 0.08, -0.065, -0.032, 0.128, 46.5235, 6.6312],
-    [-0.15, 0.62, -0.37, 0.098, 0.159, -0.121, 46.5275, 6.6257],
-    [0.28, 0.23, 0.07, -0.099, 0.142, -0.045, 46.5232, 6.6272],
-    [-0.07, -0.19, 0.14, 0.118, -0.093, 0.096, 46.5238, 6.6251],
-    [0.11, -0.12, -0.01, 0.051, -0.038, -0.022, 46.5248, 6.6255],
-    [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 46.5240, 6.6248],
-    [0.2, -0.07, 0.35, -0.125, 0.138, 0.189, 46.5236, 6.6265],
-    [-0.32, 0.16, -0.09, 0.028, -0.071, -0.155, 46.5247, 6.6250],
-    [0.06, 0.11, -0.24, 0.115, -0.163, 0.033, 46.5212, 6.6321],
-    [-0.18, -0.29, 0.21, -0.151, 0.085, 0.122, 46.5260, 6.6356],
-    [0.08, 0.14, -0.26, 0.085, -0.172, 0.011, 46.5228, 6.6315],
-    [-0.12, -0.21, 0.19, 0.095, 0.075, 0.041, 46.5233, 6.6352],
-    [0.26, -0.07, 0.13, -0.055, -0.017, 0.168, 46.5234, 6.6310],
-    [-0.14, 0.64, -0.42, 0.082, 0.163, -0.136, 46.5274, 6.6258],
-    [0.31, 0.28, 0.03, -0.108, 0.133, -0.061, 46.5231, 6.6275],
-    [-0.09, -0.20, 0.16, 0.134, -0.100, 0.074, 46.5237, 6.6252],
-    [0.13, -0.10, -0.03, 0.066, -0.028, -0.010, 46.5247, 6.6256],
-    [0.17, -0.05, 0.37, -0.109, 0.131, 0.198, 46.5237, 6.6266],
-    [-0.30, 0.13, -0.12, 0.012, -0.073, -0.165, 46.5246, 6.6251],
-    [0.04, 0.10, -0.27, 0.102, -0.166, 0.044, 46.5213, 6.6322],
-    [-0.20, -0.33, 0.28, -0.143, 0.091, 0.130, 46.5259, 6.6353],
-    [0.07, 0.16, -0.31, 0.075, -0.179, 0.000, 46.5227, 6.6313],
-]
+donne = []
 
 
 
@@ -334,9 +280,56 @@ def pointIMUtoGPS(point):
 
 
 
-def lireFichier():
-    pass
+def lireFichier(nom_fichier):
+    try:
+        # Ouvrir le fichier en mode lecture
+        with open(nom_fichier, 'r') as fichier:
+            # Lire toutes les lignes du fichier
+            lignes = fichier.readlines()
 
+            # Initialiser des listes vides pour stocker les valeurs alternées
+            liste1 = []
+            liste2 = []
+            liste3 = []
+            liste4 = []
+            liste5 = []
+            liste6 = []
+            liste7 = []
+            liste8 = []
+
+
+            # Parcourir chaque ligne du fichier
+            for i, ligne in enumerate(lignes):
+                # Supprimer les espaces en début et en fin de ligne
+                ligne = ligne.strip()
+            # Ajouter la ligne aux listes alternatives en fonction de la parité de l'indice
+                if i % 11 == 0:
+                    liste1.append(ligne)
+                if i % 11 == 1:
+                    liste2.append(ligne)
+                if i % 11 == 2:
+                    liste3.append(ligne)
+                if i % 11 == 4:
+                    liste4.append(ligne)
+                if i % 11 == 5:
+                    liste5.append(ligne)
+                if i % 11 == 6:
+                    liste6.append(ligne)
+                if i % 11 == 8:
+                    liste7.append(ligne)
+                if i % 11 == 10:
+                    liste8.append(ligne)
+
+            #print(liste1,liste2,liste3,liste4,liste5,liste6,liste7,liste8)
+            
+            for i in range(len(liste8)):
+                donne.append([float(liste1[i]),float(liste2[i]),float(liste3[i]),float(liste4[i]),float(liste5[i]),float(liste6[i]),float(liste7[i]),float(liste8[i])])
+    except FileNotFoundError:
+        print(f"Le fichier '{nom_fichier}' n'a pas été trouvé.")
+        return [], []
+    except Exception as e:
+        print(f"Une erreur s'est produite : {e}")
+        return [], []
 
 
 def allignement():
@@ -396,8 +389,8 @@ def allignement():
     #creation du premier point pour la deuxieme fois
     premierPoint = initialisation(np.array([donne[0][0],donne[0][1],donne[0][2]]))
 
-    #correction de l'angle theta dans le point0, cela allignera les chemin du gps et celui de l'imu
-    premierPoint.t = premierPoint.t+angle
+    #correction de l'angle theta dans le point0, cela allignera les chemin du gps et celui de l'imu   ±???
+    premierPoint.t = premierPoint.t-angle
 
 
 
@@ -413,6 +406,9 @@ def recurence(pointIMU,vecteurAcc,vecteurAng):
 
     # passage de l'acceleration de l'IMU dans le referentiel unique
     accelUnique = rotationVecteur(newOmega,vecteurAcc)
+
+    #comme cette acceleration mesure en permanence g, il faut l'enlever
+    accelUnique[2] = accelUnique[2]-1
 
     #utilisation du vecteur d'acceleration projeter dans le referentiel unique pour deduire le prochain point.
 
@@ -473,7 +469,7 @@ def creationGraphe():
 
 def main():
 
-    #lireFichier()
+    lireFichier("donnes.tex")
 
     #permet de creer le premier avec toute ces correction
     allignement()
@@ -489,7 +485,11 @@ def main():
 
         recurence(PointIMU.point[-1],vecacc,vecang)
 
-        creationPointGps(donne[a][-2],donne[a][-1])
+        if donne[a][-2] > 2:
+
+            creationPointGps(donne[a][-2],donne[a][-1])
+        else :
+            creationPointGps(PointGPS.point[a-1].r[0],PointGPS.point[a-1].r[0])
 
         a += 1
 
