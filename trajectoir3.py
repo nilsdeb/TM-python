@@ -24,7 +24,7 @@ import math as m
 
 
 #constente du temps entre deux mesures
-temps = 2
+temps = 10
 
 
 #liste donne, a organiser de cette magniere: [[t,accx....][t2,acc....]]
@@ -50,8 +50,11 @@ class PointIMU :
         self.__class__.point.append(self)
         self.r = vec_r  #position
         self.v = vec_v  #vitesse
+        vec_t[0] = vec_t[0]%(2*m.pi)
+        vec_t[1] = vec_t[1]%(2*m.pi)
+        vec_t[2] = vec_t[2]%(2*m.pi)
         self.t = vec_t  #position angulaire
-        self.label = 'IMU ' + str(len(self.__class__.point))
+        self.label = 'IMU ' + str(len(self.__class__.point)-1)
 
     #print
     def __str__(self):  
@@ -69,7 +72,7 @@ class PointGPS :
     def __init__(self,vec_r):
         self.__class__.point.append(self)
         self.r = vec_r  #position
-        self.label = 'gps ' + str(len(self.__class__.point))
+        self.label = 'gps ' + str(len(self.__class__.point)-1)
 
     # print
     def __str__(self):  
@@ -229,18 +232,22 @@ def initialisation(vecacc):
     # Pour savoir dans quelle orientation le capteur est au début de la mesure, il faut que au debut de la mesure, le capteur ne bouge pas. Les seuls acceleration qu il mesurera sera alors que g. je fais donc la norme du vecteur(qui devrai toujours etre egal a g) et je creer un vecteur artificiel g avec comme composant(0,g,0). EN faisant la difference d'angle entre les deux vecteurs, on a la difference de position angulaire entre le capteur et le referentiel unique.
 
     # calcule la norme
+
     norme = np.linalg.norm(vecacc)
 
     #creer le vecteur artificiel g
-    g = np.array([0,-norme,0])
+    g = np.array([0,0,-norme])
+
 
     #calule la difference d'angle entre g et le vecteurs d'acceleration mesurer par le capteur. Logiquement les angles doivent s'aditionner.
     angleDiff = diffAngleVecteur(g,vecacc,50) 
+
 
     #comme c'est le premier point et que au début de la mesure, il faut pauser la capteur quelque seconde sans le bouger, alors nous pouvons dire que sa vitesse initial = 0. Comme on creer le referentiel avec ce point, pour ne pas me compliquer la vis, je dis que ce premier point est le point central de mon referentiel, le point (0,0,0). 
 
     #creation d'un vecteur (0,0,0) pour pouvoir correctement completer les informations pour creer le premier point imu.
     vec0 = np.array([0,0,0])
+
 
     #creation de premier point imu
     return PointIMU(vec0,vec0,angleDiff)
@@ -261,7 +268,7 @@ def pointIMUtoGPS(point):
     lat_deplacement = point.r[0] / 111111
 
     # Comme plus on se raproche des poles, plus les degres de longitude devienne plus petit, la difference entre m et degrer devient variable. Le cos de la position permet de corriger cette variation. Comme je suis sur des changement de position petit, je neglige le changement de position et prend la position de reference pour corriger la variation et non celle juste avant.
-    lon_deplacement = point.r[2] / (111111 * np.cos(np.radians(donne[0][-2])))
+    lon_deplacement = point.r[1] / (111111 * np.cos(np.radians(donne[0][-2])))
 
     # additionne la difference avec le point de reference
     lat = donne[0][-2] + lat_deplacement     
@@ -323,7 +330,7 @@ def lireFichier(nom_fichier):
             #print(liste1,liste2,liste3,liste4,liste5,liste6,liste7,liste8)
             
             for i in range(len(liste8)):
-                donne.append([float(liste1[i]),float(liste2[i]),float(liste3[i]),float(liste4[i]),float(liste5[i]),float(liste6[i]),float(liste7[i]),float(liste8[i])])
+                donne.append([float(liste1[i]),float(liste2[i]),float(liste3[i]),float(liste4[i])/180*m.pi,float(liste5[i])/180*m.pi,float(liste6[i])/180*m.pi,float(liste7[i]),float(liste8[i])])
     except FileNotFoundError:
         print(f"Le fichier '{nom_fichier}' n'a pas été trouvé.")
         return [], []
@@ -336,22 +343,24 @@ def allignement():
     """"allignement entre les point gps et imu"""
 
     #Si on n allligne pas les point IMu et Gps, les point gps peuvent partire par exemple au nord comm ele trajet réel, mais les point imu vers l'est. Pour calibrer les point imu, il faut calculer l angle de decalage et le corriger en l'incluant dans le point0, dans le theta.gamma
-
+    #verifier
     #faire l'initialisation sans calibrage pour donner le point0
     initialisation(np.array([donne[0][0],donne[0][1],donne[0][2]]))
+
 
     #variable qui compte le nombre de mesure passé, on commnece a 1 car l'initialisation a deja ete faite
     nombrePoint = 0
 
     #permet de creer les point uniquement jusqu il y aie un deplacement de 10 m. le but et de ne pas tout calculer mais d'avoir une distence assez grande pour pouvoir etre au dessus de l'incertitude du gps.
-    while np.linalg.norm(PointIMU.point[nombrePoint].r[0:1])< 1: 
+    while np.linalg.norm(PointIMU.point[nombrePoint].r[0:2])< 50:
+
 
         #construit les vecteur d'acceleration et de vitesse angulaire pour la recurence
         vecacc = np.array([donne[nombrePoint][0],donne[nombrePoint][1],donne[nombrePoint][2]])
         vecvitang = np.array([donne[nombrePoint][3],donne[nombrePoint][4],donne[nombrePoint][5]])
 
         #construit le point IMU suivant. 
-        recurence(PointIMU.point[nombrePoint],vecacc,vecvitang)   
+        recurence(PointIMU.point[nombrePoint],vecacc,vecvitang)
 
         # mets a jour la constente  
         nombrePoint += 1 
@@ -389,8 +398,8 @@ def allignement():
     #creation du premier point pour la deuxieme fois
     premierPoint = initialisation(np.array([donne[0][0],donne[0][1],donne[0][2]]))
 
-    #correction de l'angle theta dans le point0, cela allignera les chemin du gps et celui de l'imu   ±???
-    premierPoint.t = premierPoint.t-angle
+    #correction de l'angle theta dans le point0, cela allignera les chemin du gps et celui de l'imu   ±???, attention, prendre que l'angle z, le reste est faux car se sont dans vecteur 2d passé artificiellement en 3d
+    premierPoint.t[2] -= angle[2]
 
 
 
@@ -401,14 +410,17 @@ def recurence(pointIMU,vecteurAcc,vecteurAng):
 
     # equation angulaire pour obtenir theta_n+1   //  new_t = theta n+1
     newOmega = vecteurAng*temps + pointIMU.t
+    newOmega[0] = newOmega[0]%(2*m.pi)
+    newOmega[1] = newOmega[1]%(2*m.pi)
+    newOmega[2] = newOmega[2]%(2*m.pi)
 
     # comme le capteur n est pas fixer a un rail, il peut faire des mouvements dotatif. Cela implique que il perd le referentiel de la mesure n-1. avec les equation angulaire, tetha et omega, cela permet de faire une projection du vecteur de le referentiel de mesure au referentiel unique.
 
     # passage de l'acceleration de l'IMU dans le referentiel unique
-    accelUnique = rotationVecteur(newOmega,vecteurAcc)
+    accelUnique = rotationVecteur(vecteurAcc,newOmega)
 
-    #comme cette acceleration mesure en permanence g, il faut l'enlever
-    accelUnique[2] = accelUnique[2]-1
+    #comme cette acceleration mesure en permanence g, il faut l'enlever, mais comme g = -1, il faut faire +1
+    accelUnique[2] = accelUnique[2]+1
 
     #utilisation du vecteur d'acceleration projeter dans le referentiel unique pour deduire le prochain point.
 
@@ -418,6 +430,8 @@ def recurence(pointIMU,vecteurAcc,vecteurAng):
 
     #creation du point_n+1
     return PointIMU(new_r, new_v, newOmega)
+
+
 
 
 
@@ -468,8 +482,9 @@ def creationGraphe():
 
 
 def main():
-
+    #verifier, fonctionnel
     lireFichier("donnes.tex")
+
 
     #permet de creer le premier avec toute ces correction
     allignement()
@@ -481,9 +496,12 @@ def main():
     for i in donne :
         
         vecacc = np.array([donne[a][0],donne[a][1],donne[a][2]])
-        vecang = np.array([donne[a][4],donne[a][5],donne[a][6]])
+
+        #attention,les angles sont en degrer
+        vecang = np.array([donne[a][3],donne[a][4],donne[a][5]])
 
         recurence(PointIMU.point[-1],vecacc,vecang)
+
 
         if donne[a][-2] > 2:
 
@@ -495,7 +513,6 @@ def main():
 
     #creation du plan
     creationGraphe()
-
 
     
 
