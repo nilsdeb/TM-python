@@ -222,7 +222,7 @@ def diffAngleVecteur(vecteur1, vecteur2, precision):
 
 
 
-def initialisation(vecacc):
+def allignemntG(vecacc):
     """creer le referentiel unique
 
     !mettre le premier vecteur acceleration!
@@ -251,6 +251,22 @@ def initialisation(vecacc):
 
     #creation de premier point imu
     return PointIMU(vec0,vec0,angleDiff)
+
+
+#######################################  creation Point GPS #####################################################################################
+
+
+
+# permet plus simplement de creer des point gps
+def creationPointGps (long, lat):
+
+    # creer un vecteur avec deux coordonnées, lattitude et longitude
+    position = np.array([long,lat])
+
+    #return un point gps
+    return PointGPS(position)
+
+
 
 
 
@@ -339,13 +355,13 @@ def lireFichier(nom_fichier):
         return [], []
 
 
-def allignement():
+def initialisation():
     """"allignement entre les point gps et imu"""
 
     #Si on n allligne pas les point IMu et Gps, les point gps peuvent partire par exemple au nord comm ele trajet réel, mais les point imu vers l'est. Pour calibrer les point imu, il faut calculer l angle de decalage et le corriger en l'incluant dans le point0, dans le theta.gamma
     #verifier
     #faire l'initialisation sans calibrage pour donner le point0
-    initialisation(np.array([donne[0][0],donne[0][1],donne[0][2]]))
+    allignemntG(np.array([donne[0][0],donne[0][1],donne[0][2]]))
 
 
     #variable qui compte le nombre de mesure passé, on commnece a 1 car l'initialisation a deja ete faite
@@ -396,7 +412,7 @@ def allignement():
     PointIMU.point.clear()
 
     #creation du premier point pour la deuxieme fois
-    premierPoint = initialisation(np.array([donne[0][0],donne[0][1],donne[0][2]]))
+    premierPoint = allignemntG(np.array([donne[0][0],donne[0][1],donne[0][2]]))
 
     #correction de l'angle theta dans le point0, cela allignera les chemin du gps et celui de l'imu   ±???, attention, prendre que l'angle z, le reste est faux car se sont dans vecteur 2d passé artificiellement en 3d
     premierPoint.t[2] -= angle[2]
@@ -430,19 +446,6 @@ def recurence(pointIMU,vecteurAcc,vecteurAng):
 
     #creation du point_n+1
     return PointIMU(new_r, new_v, newOmega)
-
-
-
-
-
-# permet plus simplement de creer des point gps
-def creationPointGps (long, lat):
-
-    # creer un vecteur avec deux coordonnées, lattitude et longitude
-    position = np.array([long,lat])
-
-    #return un point gps
-    return PointGPS(position)
 
 
 
@@ -487,7 +490,7 @@ def main():
 
 
     #permet de creer le premier avec toute ces correction
-    allignement()
+    initialisation()
 
     #boucle qui crée tout les poin IMU par recurence et tout les point gps
 
