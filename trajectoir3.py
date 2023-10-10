@@ -24,7 +24,7 @@ import math as m
 
 
 #constente du temps entre deux mesures
-temps = 10
+temps = 0.5
 
 
 #liste donne, a organiser de cette magniere: [[t,accx....][t2,acc....]]
@@ -50,7 +50,6 @@ class PointIMU :
         self.__class__.point.append(self)
         self.r = vec_r  #position
         self.v = vec_v  #vitesse
- 
         self.t = vec_t  #position angulaire
         self.label = 'IMU ' + str(len(self.__class__.point)-1)
 
@@ -325,21 +324,21 @@ def lireFichier(nom_fichier):
             # Supprimer les espaces en début et en fin de ligne
             ligne = ligne.strip()
             # Ajouter la ligne aux listes alternatives en fonction de la parité de l'indice
-            if i % 11 == 0:
+            if i % 10 == 0:
                 liste1.append(ligne)
-            if i % 11 == 1:
+            if i % 10 == 1:
                 liste2.append(ligne)
-            if i % 11 == 2:
+            if i % 10 == 2:
                 liste3.append(ligne)
-            if i % 11 == 4:
+            if i % 10 == 4:
                 liste4.append(ligne)
-            if i % 11 == 5:
+            if i % 10 == 5:
                 liste5.append(ligne)
-            if i % 11 == 6:
+            if i % 10 == 6:
                 liste6.append(ligne)
-            if i % 11 == 8:
+            if i % 10 == 7:
                 liste7.append(ligne)
-            if i % 11 == 10:
+            if i % 10 == 9:
                 liste8.append(ligne)
             
         for i in range(len(liste8)):
@@ -359,8 +358,8 @@ def initialisation():
     #variable qui compte le nombre de mesure passé, on commnece a 1 car l'initialisation a deja ete faite
     nombrePoint = 0
 
-    #permet de creer les point uniquement jusqu il y aie un deplacement de 10 m. le but et de ne pas tout calculer mais d'avoir une distence assez grande pour pouvoir etre au dessus de l'incertitude du gps.
-    while np.linalg.norm(PointIMU.point[nombrePoint].r[0:2])< 10:
+    #permet de creer les point uniquement jusqu il y aie un deplacement de 20 m. le but et de ne pas tout calculer mais d'avoir une distence assez grande pour pouvoir etre au dessus de l'incertitude du gps.
+    while np.linalg.norm(PointIMU.point[nombrePoint].r[0:2])< 20:
 
 
         #construit les vecteur d'acceleration et de vitesse angulaire pour la recurence
@@ -407,7 +406,7 @@ def initialisation():
     premierPoint = alignemntG(np.array([donne[0][0],donne[0][1],donne[0][2]]))
 
     #correction de l'angle theta dans le point0, cela allignera les chemin du gps et celui de l'imu   ±???, attention, prendre que l'angle z, le reste est faux car se sont dans vecteur 2d passé artificiellement en 3d
-    premierPoint.t[2] -= angle[2]
+    premierPoint.t[2] = angle[2]
 
 
 
@@ -478,7 +477,7 @@ def creationGraphe():
 
 def main():
     #verifier, fonctionnel
-    lireFichier("donnes.tex")
+    lireFichier("donnes2.tex")
 
 
     #permet de creer le premier avec toute ces correction
@@ -496,15 +495,16 @@ def main():
         vecang = np.array([donne[a][3],donne[a][4],donne[a][5]])
 
         recurence(PointIMU.point[-1],vecacc,vecang)
-
         print(PointIMU.point[-1])
 
+        
 
         if donne[a][-2] > 2:
 
             creationPointGps(donne[a][-2],donne[a][-1])
         else :
             creationPointGps(PointGPS.point[a-1].r[0],PointGPS.point[a-1].r[0])
+
 
         a += 1
 
