@@ -212,10 +212,39 @@ def diffAngleVecteur(vecteur1, vecteur2, precision):
     return dico[a]
 
 
+#######################################  calibrage gyro #####################################################################################
+
+
+def calibrage():
+
+    nombredonne = len(donne)-1
+
+    x,y,z = 0,0,0
+
+    for i in range(nombredonne):
+        x += donne[i][3]
+        y += donne[i][4]
+        z += donne[i][5]
+
+
+    #faire les moyennes
+    cx = x/nombredonne
+
+    cy = y/nombredonne
+
+    cz = z/nombredonne
+
+    for i in range(nombredonne):
+        donne[i][3] -= cx
+        donne[i][4] -= cy
+        donne[i][5] -= cz
 
 
 
 #######################################  initialisation #####################################################################################
+
+
+
 
 
 
@@ -410,6 +439,7 @@ def initialisation():
 
     #avoir le vecteur normer
     vecteur2 = np.array([vecteur1[0]/norme1,vecteur1[1]/norme1,0])
+    print(vecteur2)
 
     #creation du vecteur representant l IMU
     vecteur3 = np.array([gps2.r[0]-gps0.r[0],gps2.r[1]-gps0.r[1],0])
@@ -417,9 +447,11 @@ def initialisation():
 
     #avoir le vecteur normer
     vecteur4 = np.array([vecteur3[0]/norme3,vecteur3[1]/norme3,0])
+    print(vecteur4)
 
     #donne la difference d'angle entre les deux vecteurs. C'est cette difference d'angle qui permettra d'alligner els point gps et les point imu.
-    angle = diffAngleVecteur(vecteur2,vecteur4,50)
+    angle = diffAngleVecteur(vecteur2,vecteur4,100)
+
 
     #comme tout les point imu doive etre corriger avec le nouvelle angle, il est plus simple d'effacer tout les point construit jusque la et recommnecer la creation de tout les point.
     PointGPS.point.clear()
@@ -429,7 +461,10 @@ def initialisation():
     premierPoint = alignemntG(np.array([donne[0][0],donne[0][1],donne[0][2]]))
 
     #correction de l'angle theta dans le point0, cela allignera les chemin du gps et celui de l'imu   ±???, attention, prendre que l'angle z, le reste est faux car se sont dans vecteur 2d passé artificiellement en 3d
-    premierPoint.t[2] = angle[2]
+    print(premierPoint.t)
+    print(angle)
+    premierPoint.t[2] += angle[2]
+    print(premierPoint.t)
 
 
 
@@ -474,7 +509,7 @@ def creationGraphe():
         #cette etape revient a faire la meme chose que dans point imu to gps mais nous ne pouvons pas utiliser cette fonction ici car cela crereai des point gps, qui seront inditengable des point imu. la carte en devient donc incompresible. Pour comprendre les 4 prochaine ligne de code, il faut se referer a la fonction ImuToGps
         lat_deplacement = point.r[0] / 111111
 
-        lon_deplacement = point.r[2] / (111111 * np.cos(np.radians(donne[0][-2])))
+        lon_deplacement = point.r[1] / (111111 * np.cos(np.radians(donne[0][-2])))
 
         lat = donne[0][-2] + lat_deplacement      
         lon = donne[0][-1] + lon_deplacement
@@ -500,7 +535,10 @@ def creationGraphe():
 
 def main():
     #verifier, fonctionnel
-    lireFichier("donnes3.tex")
+    lireFichier("testmruax.tex")
+
+    #permet de corrige le calibrage de l'imu
+    calibrage()
 
 
     #permet de creer le premier avec toute ces correction
@@ -508,9 +546,7 @@ def main():
 
     #boucle qui crée tout les poin IMU par recurence et tout les point gps
 
-    #pas possible de faire sans passé par cette petite variable a
-    a = 0
-    for i in donne :
+    for a in range(len(donne)) :
         
         vecacc = np.array([donne[a][0],donne[a][1],donne[a][2]])
 
@@ -529,7 +565,6 @@ def main():
             creationPointGps(PointGPS.point[a-1].r[0],PointGPS.point[a-1].r[0])
 
 
-        a += 1
 
 
     #creation du plan
