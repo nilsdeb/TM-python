@@ -1,5 +1,5 @@
 #######################################  librairie  ######################################################################################
-
+# code_tm.py>
 
 # graphique
 import folium
@@ -228,11 +228,7 @@ def calibrage():
 
 
     #faire les moyennes
-    cx = x/nombredonne
-
-    cy = y/nombredonne
-
-    cz = z/nombredonne
+    cx,cy,cz = x/nombredonne,y/nombredonne,z/nombredonne
 
     for i in range(nombredonne):
         donne[i][3] -= cx
@@ -411,7 +407,7 @@ def initialisation():
     nombrePoint = 0
 
     #permet de creer les point uniquement jusqu il y aie un deplacement de 20 m. le but et de ne pas tout calculer mais d'avoir une distence assez grande pour pouvoir etre au dessus de l'incertitude du gps.
-    while LA.norm(PointIMU.point[nombrePoint].r[0:2])< 20:
+    while LA.norm(PointIMU.point[nombrePoint].r[0:2])< 2:
 
 
         #construit les vecteur d'acceleration et de vitesse angulaire pour la recurence
@@ -537,12 +533,14 @@ def main():
     #verifier, fonctionnel
     lireFichier("testmruax.tex")
 
+
     #permet de corrige le calibrage de l'imu
     calibrage()
 
 
     #permet de creer le premier avec toute ces correction
     initialisation()
+    #alignemntG(np.array([donne[0][0],donne[0][1],donne[0][2]]))
 
     #boucle qui crée tout les poin IMU par recurence et tout les point gps
 
