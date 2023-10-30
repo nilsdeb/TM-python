@@ -143,6 +143,39 @@ def rotationVecteur(vector, vectorAngle):
 
 
 
+#fonction de rotation autour d'un vecteur angle dont la norme = l'angle de rotation
+
+def rotate_vector_with_angle_and_axis(axis, vector_to_rotate):
+
+
+    # Ensure that the axis is a unit vector
+
+
+
+    norme = LA.norm(axis)
+    angle = norme
+    axis2 = axis/norme
+
+
+
+    ux, uy, uz = axis2
+    cos_theta = np.cos(angle)
+    sin_theta = np.sin(angle)
+    one_minus_cos_theta = 1 - cos_theta
+
+    # Construct the rotation matrix
+    R = np.array([
+        [cos_theta + ux**2 * one_minus_cos_theta, ux * uy * one_minus_cos_theta - uz * sin_theta, ux * uz * one_minus_cos_theta + uy * sin_theta],
+        [uy * ux * one_minus_cos_theta + uz * sin_theta, cos_theta + uy**2 * one_minus_cos_theta, uy * uz * one_minus_cos_theta - ux * sin_theta],
+        [uz * ux * one_minus_cos_theta - uy * sin_theta, uz * uy * one_minus_cos_theta + ux * sin_theta, cos_theta + uz**2 * one_minus_cos_theta]
+    ])
+
+    # Rotate the vector using matrix-vector multiplication
+    rotated_vector = np.dot(R, vector_to_rotate)
+
+    return rotated_vector
+
+
 
 #######################################  fonction calule d'angle entre vecteurs  ######################################################################################
 
@@ -182,7 +215,7 @@ def diffAngleVecteur(vecteur1, vecteur2, precision):
                 vectorAngle = np.array([angleX,angleY,angleZ])
 
                 # calcule le vecteur en tournant avec les angles tests
-                f2 = rotationVecteur(vecteur2,vectorAngle)
+                f2 = rotate_vector_with_angle_and_axis(vectorAngle,vecteur2)
 
                 # Calculez la norme de la différence entre f2 et g
                 diff_norm = LA.norm(f2-vecteur1)               
@@ -390,7 +423,7 @@ def lireFichier(nom_fichier):
 
             
         for i in range(len(liste1)):
-            donne.append([float(liste1[i]),float(liste2[i]),float(liste3[i]),float(liste4[i])/180*m.pi,float(liste5[i])/180*m.pi,float(liste6[i])/180*m.pi,float(liste7[i]),float(liste8[i])])
+            donne.append([float(liste1[i]),float(liste2[i]),float(liste3[i]),float(liste4[i])/90*m.pi,float(liste5[i])/90*m.pi,float(liste6[i])/90*m.pi,float(liste7[i]),float(liste8[i])])
 
 
 
@@ -435,7 +468,6 @@ def initialisation():
 
     #avoir le vecteur normer
     vecteur2 = np.array([vecteur1[0]/norme1,vecteur1[1]/norme1,0])
-    print(vecteur2)
 
     #creation du vecteur representant l IMU
     vecteur3 = np.array([gps2.r[0]-gps0.r[0],gps2.r[1]-gps0.r[1],0])
@@ -443,10 +475,11 @@ def initialisation():
 
     #avoir le vecteur normer
     vecteur4 = np.array([vecteur3[0]/norme3,vecteur3[1]/norme3,0])
-    print(vecteur4)
 
     #donne la difference d'angle entre les deux vecteurs. C'est cette difference d'angle qui permettra d'alligner els point gps et les point imu.
     angle = diffAngleVecteur(vecteur2,vecteur4,100)
+
+    print(angle)
 
 
     #comme tout les point imu doive etre corriger avec le nouvelle angle, il est plus simple d'effacer tout les point construit jusque la et recommnecer la creation de tout les point.
@@ -457,10 +490,9 @@ def initialisation():
     premierPoint = alignemntG(np.array([donne[0][0],donne[0][1],donne[0][2]]))
 
     #correction de l'angle theta dans le point0, cela allignera les chemin du gps et celui de l'imu   ±???, attention, prendre que l'angle z, le reste est faux car se sont dans vecteur 2d passé artificiellement en 3d
-    print(premierPoint.t)
-    print(angle)
+
     premierPoint.t[2] += angle[2]
-    print(premierPoint.t)
+
 
 
 
@@ -471,17 +503,22 @@ def recurence(pointIMU,vecteurAcc,vecteurAng):
 
     # equation angulaire pour obtenir theta_n+1   //  new_t = theta n+1
     newOmega = vecteurAng*temps + pointIMU.t
-    newOmega[0] = newOmega[0]%(2*m.pi)
-    newOmega[1] = newOmega[1]%(2*m.pi)
-    newOmega[2] = newOmega[2]%(2*m.pi)
+    newOmega[0] = newOmega[0]#%(2*m.pi)
+    newOmega[1] = newOmega[1]#%(2*m.pi)
+    newOmega[2] = newOmega[2]#%(2*m.pi)
+    
 
     # comme le capteur n est pas fixer a un rail, il peut faire des mouvements dotatif. Cela implique que il perd le referentiel de la mesure n-1. avec les equation angulaire, tetha et omega, cela permet de faire une projection du vecteur de le referentiel de mesure au referentiel unique.
 
     # passage de l'acceleration de l'IMU dans le referentiel unique
-    accelUnique = rotationVecteur(vecteurAcc,newOmega)
+    accelUnique = rotate_vector_with_angle_and_axis(newOmega,vecteurAcc)
+
+    print()
 
     #comme cette acceleration mesure en permanence g, il faut l'enlever, mais comme g = -1, il faut faire +1
-    accelUnique[2] = accelUnique[2]+1
+    accelUnique[2] = accelUnique[2]-1
+    print("recurence, vecteur acc : {0}, vecteur corriger ; {1}".format(vecteurAcc,accelUnique))
+    print( )
 
     #utilisation du vecteur d'acceleration projeter dans le referentiel unique pour deduire le prochain point.
 
@@ -531,7 +568,7 @@ def creationGraphe():
 
 def main():
     #verifier, fonctionnel
-    lireFichier("testmruax.tex")
+    lireFichier("test.tex")
 
 
     #permet de corrige le calibrage de l'imu
@@ -552,7 +589,7 @@ def main():
         vecang = np.array([donne[a][3],donne[a][4],donne[a][5]])
 
         recurence(PointIMU.point[-1],vecacc,vecang)
-        print(PointIMU.point[-1])
+        print("main",PointIMU.point[-1])
 
         
 
