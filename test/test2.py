@@ -1,59 +1,74 @@
-import folium
-from folium import plugins
-import random
-import math
-
-# Point de chaque prise de données
-class Point:
-    # Liste de tous les points créés
-    point = []
-
-    def __init__(self, lat, lon, label):
-        self.__class__.point.append(self)
-        self.lat = lat
-        self.lon = lon
-        self.label = label
 
 
-# Fonction pour générer la carte avec les points
-def generate_map():
-    # Création de la carte centrée sur une position initiale
-    m = folium.Map(location=[48.8588377, 2.2770206], zoom_start=12)
-
-    # Ajout des marqueurs pour chaque point
-    for point in Point.point:
-        folium.Marker(location=[point.lat, point.lon], popup=point.label).add_to(m)
-
-    # Affichage de la carte avec la fonction de clusterisation
-    plugins.MarkerCluster().add_to(m)
-
-    # Affichage de la carte
-    return m
 
 
-# Générer un trajet de 100 points sur une distance de 2 km
-distance = 2  # en kilomètres
-num_points = 100
-start_lat = 48.8588377
-start_lon = 2.2770206
+def lireFichier(nom_fichier):
+        
+    # Initialiser des listes vides pour stocker les valeurs alternées
+    liste1 = []
+    liste2 = []
+    liste3 = []
+    liste4 = []
+    liste5 = []
+    liste6 = []
+    liste7 = []
+    liste8 = []
 
-# Calculer la distance entre chaque point
-distance_per_point = distance / num_points
+    nombreligne = 0
+    
+    # Ouvrir le fichier en mode lecture
+    with open(nom_fichier, 'r') as fichier:
+        
+        # Lire toutes les lignes du fichier
+        lignes = fichier.readlines()
 
-# Générer les points du trajet
-for i in range(num_points):
-    # Calculer la latitude et la longitude pour chaque point
-    d_lat = random.uniform(-1, 1) * distance_per_point / 111.32
-    d_lon = random.uniform(-1, 1) * distance_per_point / (111.32 * math.cos(math.radians(start_lat)))
-    lat = start_lat + d_lat
-    lon = start_lon + d_lon
-    label = f"Point {i+1}"
 
-    # Créer un objet Point pour chaque point du trajet
-    point = Point(lat, lon, label)
+        # Parcourir chaque ligne du fichier
+        for i, ligne in enumerate(lignes):
 
-# Générer la carte avec les points du trajet
-map = generate_map()
+            #split en differents ellement des que il y a une virgule
+            split = ligne[nombreligne].split(",")
 
-# Enregistrer la carte dans un fichier HTML
-map.save("map.html")
+            for i in split :
+
+                # Supprimer les espaces en début et en fin d objet
+                i = i.strip()
+
+                if i[:3] == "ax=" :
+                    ni = i[3:]
+                    liste1.append(ni)
+
+                if i[:3] == "ay=" :
+                    ni = i[3:]
+                    liste2.append(ni)
+
+                if i[:3] == "az=" :
+                    ni = i[3:]
+                    liste3.append(ni)
+
+                if i[:3] == "gx=" :
+                    ni = i[3:]
+                    liste4.append(ni)
+                
+                if i[:3] == "gy=" :
+                    ni = i[3:]
+                    liste5.append(ni)
+                
+                if i[:3] == "gz=" :
+                    ni = i[3:]
+                    liste6.append(ni)
+                
+                if i[:4] == "lat=" :
+                    ni = i[4:]
+                    liste7.append(ni)
+                
+                if i[:4] == "lon=" :
+                    ni = i[4:]
+                    liste8.append(ni)
+
+            nombreligne +=
+
+
+            
+        for i in range(len(liste8)):
+            donne.append([float(liste1[i]),float(liste2[i]),float(liste3[i]),float(liste4[i])/180*m.pi,float(liste5[i])/180*m.pi,float(liste6[i])/180*m.pi,float(liste7[i]),float(liste8[i])])
