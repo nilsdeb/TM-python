@@ -1,16 +1,50 @@
-# data est une liste qui contient les gx,gy,gz avec encore aucune conversion.
-outfile = 'finalout.csv'
-with open(outfile, 'w') as out:
-for k,row in enumerate(data):
-# conversion en rad/s (hypothese: la source est en degres par secondes)
-dps = np.array(row)
-w = dps/180*math.pi
-# !!! Il y a un signe - car on veut 'annuler' la rotation
-d_theta = -w*dt
-# Soit on intègre le vecteur theta et alors on 
-# recalcul chaque fois la position de v1 par rapport
-# au vecteur original de v1 (1,0,0), soit on tourne chaque
-# fois le v1 de la quantité d_theta, je choisis ici la 
-# deuxième possibilité.
-v1 = rotate_vector_with_angle_and_axis(d_theta,v1)
-out.write( f"{k}\t{v1[0]}\t{v1[1]}\t{v1[2]}\n")
+# pour les vecteurs et les quaternions
+import numpy as np
+from numpy import linalg as LA
+
+
+
+# pour les maths
+import math as m
+
+
+def rotate_vector_with_angle_and_axis(axis, vector_to_rotate):
+
+
+    # Ensure that the axis is a unit vector
+
+
+
+    norme = LA.norm(axis)
+    print(norme)
+    angle = norme
+    axis2 = axis/norme
+
+
+
+    ux, uy, uz = axis2
+    cos_theta = np.cos(angle)
+    sin_theta = np.sin(angle)
+    one_minus_cos_theta = 1 - cos_theta
+
+    # Construct the rotation matrix
+    R = np.array([
+        [cos_theta + ux**2 * one_minus_cos_theta, ux * uy * one_minus_cos_theta - uz * sin_theta, ux * uz * one_minus_cos_theta + uy * sin_theta],
+        [uy * ux * one_minus_cos_theta + uz * sin_theta, cos_theta + uy**2 * one_minus_cos_theta, uy * uz * one_minus_cos_theta - ux * sin_theta],
+        [uz * ux * one_minus_cos_theta - uy * sin_theta, uz * uy * one_minus_cos_theta + ux * sin_theta, cos_theta + uz**2 * one_minus_cos_theta]
+    ])
+
+    # Rotate the vector using matrix-vector multiplication
+    rotated_vector = np.dot(R, vector_to_rotate)
+
+    return rotated_vector
+
+
+
+
+vec = np.array([1,0,0])
+vec1 = np.array([1,6,0])
+vecangle = np.array([m.pi,m.pi,m.pi])
+a = rotate_vector_with_angle_and_axis(vecangle,vec1)
+
+print(a,LA.norm(vec1),LA.norm(a))
