@@ -77,7 +77,7 @@ def lireFichier(nom_fichier):
 
             
         for i in range(len(liste1)):
-            donne.append([float(liste1[i]),float(liste2[i]),float(liste3[i]),float(liste4[i])/360*(4*m.pi),float(liste5[i])/360*(4*m.pi),float(liste6[i])/360*(4*m.pi),float(liste7[i]),float(liste8[i])])
+            donne.append([float(liste1[i]),float(liste2[i]),float(liste3[i]),float(liste4[i])/360*(2*m.pi),float(liste5[i])/360*(2*m.pi),float(liste6[i])/360*(2*m.pi),float(liste7[i]),float(liste8[i])])
 
 
 
@@ -232,7 +232,7 @@ def rotate_vector_around_axes(vector, angles):
 
 print()
 def main():
-    lireFichier("testmruax.tex")
+    lireFichier("test3.tex")
 
     #print(donne)
     #calibrage()
@@ -242,36 +242,39 @@ def main():
 
     vecteurbase = np.array([1,0,0])
 
-    vecteurbase2 = np.array([1,0,0])
+    vecteurbase2 = np.array([0,0,1])
     
 
     x,y,z = 0,0,0
 
     rx,ry,rz = 0,0,0
 
-    scalaire = 360/(4*m.pi)
+    scalaire = 360/(2*m.pi)
 
     for i in range(nombredonne):
         x += donne[i][3]-0.18/scalaire
         y += donne[i][4]-0.12/scalaire
         z += donne[i][5]-0.18/scalaire
-        rx += (donne[i][3]-0.18/scalaire)*0.05
-        ry += (donne[i][4]-0.12/scalaire)*0.05
-        rz += (donne[i][5]-0.18/scalaire)*0.05
+        rx += (donne[i][3]-0.18/scalaire)*0.13
+        ry += (donne[i][4]-0.12/scalaire)*0.13
+        rz += (donne[i][5]-0.18/scalaire)*0.13
         vecteurangle = np.array([rx,ry,rz])
         vecteurbase = rotationVecteur(vecteurbase,vecteurangle)
 
    
     cx,cy,cz = x/nombredonne,y/nombredonne,z/nombredonne
 
-    t = nombredonne*0.05
+    t = nombredonne*0.13
     print("temps de la mesures : {0}".format(t))
     print("moyenne vitesses angle x : {0} /// y : {1} /// z : {2} /// angle final x : {3} /// y : {4} /// z : {5}".format(cx,cy,cz,rx,ry,rz))
 
     vecteurangle = np.array([rx,ry,rz])
 
 
-    print("quaternion : {0} /// matrice simple : {1} /// matrice ++ : {2} /// 3d matrice :{3}".format(rotationVecteur(vecteurbase2,vecteurangle),rotate_vector_with_angle_and_axis(vecteurangle,vecteurbase),rotate_vector(vecteurbase,vecteurangle),rotate_vector_around_axes(vecteurbase,vecteurangle)))
+    print("quaternion : {0} /// matrice simple : {1} /// matrice ++ : {2} /// 3d matrice :{3}".format(rotationVecteur(vecteurbase2,vecteurangle),rotate_vector_with_angle_and_axis(vecteurangle,-vecteurbase2),rotate_vector(vecteurbase2,vecteurangle),rotate_vector_around_axes(vecteurbase2,vecteurangle)))
+    vec2 = np.array([m.pi/2,m.pi/2,m.pi/2])
+
+    print("test {0}".format(rotate_vector_around_axes(vecteurbase2,vec2)))
 
 
 
