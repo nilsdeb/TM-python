@@ -1,5 +1,5 @@
 #######################################  librairie  ######################################################################################
-# code_tm.py>
+# code_tm.py
 
 # graphique
 import folium
@@ -24,7 +24,7 @@ import math as m
 
 
 #constente du temps entre deux mesures
-temps = 0.5
+temps = 0.14
 
 
 #liste donne, a organiser de cette magniere: [[t,accx....][t2,acc....]]
@@ -188,15 +188,15 @@ def diffAngleVecteur(vecteur1, vecteur2, precision):
 
     !!c'est pour passer du vecteur2 au vecteur1, pas l'inverse!!
     
-    vecteur1 = par example g
+    vecteur1 = par exemple g
     
-    vecteur2 = par example premiere acceleration
+    vecteur2 = par exemple premiere acceleration
     
     precision = nombre d'angle que on test pour x, y et z"""
 
 
-    #angle de base defini a 0 
-    angleX,angleY,angleZ = 0,0,0
+    #angle de base defini a juste en 
+    angleX,angleY,angleZ = 2*m.pi/precision,2*m.pi/precision,2*m.pi/precision
 
     #liste qui me permete de stocker tout les normes
     liste = []
@@ -205,11 +205,11 @@ def diffAngleVecteur(vecteur1, vecteur2, precision):
     dico = {}
 
     #boucle qui teste tout les angles
-    for _ in range(precision):  # Première boucle
+    for _ in range(precision-1):  # Première boucle
     
-        for _ in range(precision):  # Deuxième boucle
+        for _ in range(precision-1):  # Deuxième boucle
         
-            for _ in range(precision):  # Troisième boucle
+            for _ in range(precision-1):  # Troisième boucle
             
                 #creer un vecteur angle avec les angle tester a ce moment
                 vectorAngle = np.array([angleX,angleY,angleZ])
@@ -423,7 +423,7 @@ def lireFichier(nom_fichier):
 
             
         for i in range(len(liste1)):
-            donne.append([float(liste1[i]),float(liste2[i]),float(liste3[i]),float(liste4[i])/90*m.pi,float(liste5[i])/90*m.pi,float(liste6[i])/90*m.pi,float(liste7[i]),float(liste8[i])])
+            donne.append([float(liste1[i]),float(liste2[i]),float(liste3[i]),float(liste4[i])/180*m.pi,float(liste5[i])/180*m.pi,float(liste6[i])/180*m.pi,float(liste7[i]),float(liste8[i])])
 
 
 
@@ -435,12 +435,16 @@ def initialisation():
     #faire l'initialisation sans calibrage pour donner le point0
     alignemntG(np.array([donne[0][0],donne[0][1],donne[0][2]]))
 
+    print(PointIMU.point[0].t)
+
+    stockeangle = PointIMU.point[0].t
+
 
     #variable qui compte le nombre de mesure passé, on commnece a 1 car l'initialisation a deja ete faite
     nombrePoint = 0
 
     #permet de creer les point uniquement jusqu il y aie un deplacement de 20 m. le but et de ne pas tout calculer mais d'avoir une distence assez grande pour pouvoir etre au dessus de l'incertitude du gps.
-    while LA.norm(PointIMU.point[nombrePoint].r[0:2])< 2:
+    while LA.norm(PointIMU.point[nombrePoint].r[0:2])< 0.1:
 
 
         #construit les vecteur d'acceleration et de vitesse angulaire pour la recurence
@@ -479,7 +483,7 @@ def initialisation():
     #donne la difference d'angle entre les deux vecteurs. C'est cette difference d'angle qui permettra d'alligner els point gps et les point imu.
     angle = diffAngleVecteur(vecteur2,vecteur4,100)
 
-    print(angle)
+    print("angle",angle)
 
 
     #comme tout les point imu doive etre corriger avec le nouvelle angle, il est plus simple d'effacer tout les point construit jusque la et recommnecer la creation de tout les point.
@@ -487,11 +491,16 @@ def initialisation():
     PointIMU.point.clear()
 
     #creation du premier point pour la deuxieme fois
-    premierPoint = alignemntG(np.array([donne[0][0],donne[0][1],donne[0][2]]))
+    stockeangle[2] + angle[2]
+    premierPoint = PointIMU(np.array([0,0,0]),np.array([0,0,0]),stockeangle)
 
     #correction de l'angle theta dans le point0, cela allignera les chemin du gps et celui de l'imu   ±???, attention, prendre que l'angle z, le reste est faux car se sont dans vecteur 2d passé artificiellement en 3d
+    print("avant",premierPoint.t)
 
-    premierPoint.t[2] += angle[2]
+
+    print(premierPoint.t)
+
+    
 
 
 
@@ -502,7 +511,7 @@ def recurence(pointIMU,vecteurAcc,vecteurAng):
     #en utilisant les equation horaires, avec le point de mesure, le vecteur acceleration et celui de la vitesse angulaire mesurer au point de mesure, il est physiquement possible de savoir ou se fera la prochaine mesure.
 
     # equation angulaire pour obtenir theta_n+1   //  new_t = theta n+1
-    newOmega = vecteurAng*temps + pointIMU.t
+    newOmega = -vecteurAng*temps + pointIMU.t
     newOmega[0] = newOmega[0]#%(2*m.pi)
     newOmega[1] = newOmega[1]#%(2*m.pi)
     newOmega[2] = newOmega[2]#%(2*m.pi)
@@ -512,13 +521,17 @@ def recurence(pointIMU,vecteurAcc,vecteurAng):
 
     # passage de l'acceleration de l'IMU dans le referentiel unique
     accelUnique = rotate_vector_with_angle_and_axis(newOmega,vecteurAcc)
+    #accelUnique = rotationVecteur(vecteurAcc,newOmega)
+    #accelUnique = vecteurAcc
 
     print()
 
     #comme cette acceleration mesure en permanence g, il faut l'enlever, mais comme g = -1, il faut faire +1
-    accelUnique[2] = accelUnique[2]-1
-    print("recurence, vecteur acc : {0}, vecteur corriger ; {1}".format(vecteurAcc,accelUnique))
+    
+    print("recurence, vecteur acc : {0},norme {3}, vecteur corriger ; {1}, norme {2}".format(vecteurAcc,accelUnique,LA.norm(accelUnique),LA.norm(vecteurAcc)))
     print( )
+    accelUnique[2] = accelUnique[2]+1
+    accelUnique = 9.81*accelUnique
 
     #utilisation du vecteur d'acceleration projeter dans le referentiel unique pour deduire le prochain point.
 
@@ -568,11 +581,11 @@ def creationGraphe():
 
 def main():
     #verifier, fonctionnel
-    lireFichier("test.tex")
+    lireFichier("test3.tex")
 
 
     #permet de corrige le calibrage de l'imu
-    calibrage()
+    #calibrage()
 
 
     #permet de creer le premier avec toute ces correction
@@ -598,6 +611,10 @@ def main():
             creationPointGps(donne[a][-2],donne[a][-1])
         else :
             creationPointGps(PointGPS.point[a-1].r[0],PointGPS.point[a-1].r[0])
+
+    print(temps*len(PointIMU.point))
+
+    print(PointIMU.point[2].t-PointIMU.point[-1].t)
 
 
 
