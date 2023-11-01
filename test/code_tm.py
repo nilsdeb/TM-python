@@ -1,9 +1,8 @@
 #######################################  librairie  ######################################################################################
-# code_tm.py
+
 
 # graphique
 import folium
-
 
 
 # pour les vecteurs et les quaternions
@@ -11,20 +10,16 @@ import numpy as np
 from numpy import linalg as LA
 
 
-
 # pour les maths
 import math as m
-
 
 
 #######################################  liste et variable  ######################################################################################
 
 
 
-
-
 #constente du temps entre deux mesures
-temps = 0.14
+temps = 0.12
 
 
 #liste donne, a organiser de cette magniere: [[t,accx....][t2,acc....]]
@@ -32,9 +27,11 @@ temps = 0.14
 donne = []
 
 
+#variable de stockage pour la verification du signe de l acceleration corrigee
+accelerationglobale = 0
+
 
 #######################################  class point  ######################################################################################
-
 
 
 
@@ -79,101 +76,42 @@ class PointGPS :
 
 
 
-################################### Fonction pour effectuer la rotation d'un vecteur à l'aide de quaternions  #############################
-# code coder par Jonathan Muller puis adapté
+######################################### fonction de rotation d un vectuer #####################################################################################################
 
 
 
-# Fonction pour multiplier deux quaternions (utiliser dans rotation)
-def quaternion_multiply(q1, q2):
-    w1, x1, y1, z1 = q1
-    w2, x2, y2, z2 = q2
-    w = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2
-    x = w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2
-    y = w1 * y2 - x1 * z2 + y1 * w2 + z1 * x2
-    z = w1 * z2 + x1 * y2 - y1 * x2 + z1 * w2
-    return np.array([w, x, y, z])
-
-
-
-# Fonction pour effectuer la rotation d'un vecteur à l'aide de quaternions
-def rotationVecteur(vector, vectorAngle):
-    """Permet de tourner un vecteur dans l'espace avec les angles x,y,z. 
-    
-    !les angles doivent etre en radians!
-    
-    retourne directement le vecteur qui a fait la rotation
-    """
-
-
-    alpha = vectorAngle[0]
-    beta = vectorAngle[1]
-    gamma = vectorAngle[2]
-
-    #optimisation
-    sinAlpha = np.sin(alpha/2)
-    cosBeta = np.cos(beta/2)
-    cosGamma = np.cos(gamma/2)
-    cosAlpha = np.cos(alpha/2)
-    sinBeta = np.sin(beta/2)
-    sinGamma = np.sin(gamma/2)
-
-    # Calcul des composantes du quaternion
-    qx = sinAlpha * cosBeta * cosGamma + cosAlpha * sinBeta * sinGamma
-    qy = cosAlpha * sinBeta * cosGamma - sinAlpha * cosBeta * sinGamma
-    qz = cosAlpha * cosBeta * sinGamma + sinAlpha * sinBeta * cosGamma
-    qw = cosAlpha * cosBeta * cosGamma - sinAlpha * sinBeta * sinGamma
- 
-    # Normalisation du quaternion
-    quaternion = np.array([qw, qx, qy, qz]) / LA.norm([qw, qx, qy, qz])
- 
-    # Conversion du vecteur en un quaternion
-    vector_quaternion = np.append([0], vector)
- 
-    # Calcul de la conjugaison du quaternion de rotation
-    conjugate_quaternion = np.array([quaternion[0], -quaternion[1], -quaternion[2], -quaternion[3]])
- 
-    # Calcul du quaternion résultant
-    rotated_quaternion = quaternion_multiply(quaternion_multiply(quaternion, vector_quaternion), conjugate_quaternion)
- 
-    # Extraction du vecteur transformé à partir du quaternion
-    rotated_vector = rotated_quaternion[1:]
-    return rotated_vector
- 
-
-
-
-#fonction de rotation autour d'un vecteur angle dont la norme = l'angle de rotation
 
 def rotate_vector_with_angle_and_axis(axis, vector_to_rotate):
 
+    """rotation d'un vecteur autour d'un vecteur angulaire"""
 
-    # Ensure that the axis is a unit vector
-
-
-
-    norme = LA.norm(axis)
-    angle = norme
-    axis2 = axis/norme
+    #fais la norme du vecteur de rotation = angle que l on veut tourner
+    angle = LA.norm(axis)
 
 
+    #si il y a pas d angle alors il n y a pas de rotation
+    if angle == 0 :
+        return vector_to_rotate
 
+    #normalise l axe de rotation (angle etant la norme de axis)
+    axis2 = axis/angle
+
+    #creation des parametres pour la matrice
     ux, uy, uz = axis2
     cos_theta = np.cos(angle)
     sin_theta = np.sin(angle)
     one_minus_cos_theta = 1 - cos_theta
 
-    # Construct the rotation matrix
+    # construction de la matrice
     R = np.array([
         [cos_theta + ux**2 * one_minus_cos_theta, ux * uy * one_minus_cos_theta - uz * sin_theta, ux * uz * one_minus_cos_theta + uy * sin_theta],
         [uy * ux * one_minus_cos_theta + uz * sin_theta, cos_theta + uy**2 * one_minus_cos_theta, uy * uz * one_minus_cos_theta - ux * sin_theta],
         [uz * ux * one_minus_cos_theta - uy * sin_theta, uz * uy * one_minus_cos_theta + ux * sin_theta, cos_theta + uz**2 * one_minus_cos_theta]
     ])
 
-    # Rotate the vector using matrix-vector multiplication
-    rotated_vector = np.dot(R, vector_to_rotate)
+    #retourne la rotation par R du vecteur a tourner
+    return np.dot(R, vector_to_rotate)
 
-    return rotated_vector
 
 
 
@@ -182,8 +120,8 @@ def rotate_vector_with_angle_and_axis(axis, vector_to_rotate):
 
 
 
-
 def diffAngleVecteur(vecteur1, vecteur2, precision):
+
     """difference d'angle entre vecteur 2 et vecteur 1
 
     !!c'est pour passer du vecteur2 au vecteur1, pas l'inverse!!
@@ -194,9 +132,8 @@ def diffAngleVecteur(vecteur1, vecteur2, precision):
     
     precision = nombre d'angle que on test pour x, y et z"""
 
-
-    #angle de base defini a juste en 
-    angleX,angleY,angleZ = 2*m.pi/precision,2*m.pi/precision,2*m.pi/precision
+    #angle de base defini, pas a 0 sinon dans la fonction rotate il y a une dividion par 0
+    angleX,angleY,angleZ = 0,0,0
 
     #liste qui me permete de stocker tout les normes
     liste = []
@@ -205,11 +142,14 @@ def diffAngleVecteur(vecteur1, vecteur2, precision):
     dico = {}
 
     #boucle qui teste tout les angles
-    for _ in range(precision-1):  # Première boucle
-    
-        for _ in range(precision-1):  # Deuxième boucle
+    # Première boucle
+    for _ in range(precision-1):  
         
-            for _ in range(precision-1):  # Troisième boucle
+        # Deuxième boucle
+        for _ in range(precision-1):  
+            
+            # Troisième boucle
+            for _ in range(precision-1):  
             
                 #creer un vecteur angle avec les angle tester a ce moment
                 vectorAngle = np.array([angleX,angleY,angleZ])
@@ -224,7 +164,7 @@ def diffAngleVecteur(vecteur1, vecteur2, precision):
 
                 dico[diff_norm] = vectorAngle
 
-                #print("vector_angle {0}//////// f2 {1}//////// g-f2 {2}//////// diff_norme {3}".format(vectorAngle,f2,vecteur1-f2,diff_norm))
+                #print("diffAngleVecteur : vector_angle {0}//////// f2 {1}//////// g-f2 {2}//////// diff_norme {3}".format(vectorAngle,f2,vecteur1-f2,diff_norm))
 
                 angleZ += 2*m.pi / precision
 
@@ -241,32 +181,39 @@ def diffAngleVecteur(vecteur1, vecteur2, precision):
     #cherche la plus petite norme
     a = min(liste)
 
-    #retourne
+    #retourne le vecteur angle
     return dico[a]
+
+
 
 
 #######################################  calibrage gyro #####################################################################################
 
 
-def calibrage():
+
+
+def calibrage(nombrepoint):
+
+    """calibre le gyroscope en soustrayant la moyenne des premier point a l'ensemble des donnes gyro"""
 
     nombredonne = len(donne)-1
 
     x,y,z = 0,0,0
 
-    for i in range(nombredonne):
+    for i in range(nombrepoint):
         x += donne[i][3]
         y += donne[i][4]
         z += donne[i][5]
 
+    #fait les moyennes
+    cx,cy,cz = x/4,y/4,z/4
 
-    #faire les moyennes
-    cx,cy,cz = x/nombredonne,y/nombredonne,z/nombredonne
-
+    #corrige l'ensemble de la base de donnees
     for i in range(nombredonne):
         donne[i][3] -= cx
         donne[i][4] -= cy
         donne[i][5] -= cz
+
 
 
 
@@ -275,9 +222,8 @@ def calibrage():
 
 
 
-
-
 def alignemntG(vecacc):
+
     """creer le referentiel unique
 
     !mettre le premier vecteur acceleration!
@@ -287,7 +233,6 @@ def alignemntG(vecacc):
     # Pour savoir dans quelle orientation le capteur est au début de la mesure, il faut que au debut de la mesure, le capteur ne bouge pas. Les seuls acceleration qu il mesurera sera alors que g. je fais donc la norme du vecteur(qui devrai toujours etre egal a g) et je creer un vecteur artificiel g avec comme composant(0,g,0). EN faisant la difference d'angle entre les deux vecteurs, on a la difference de position angulaire entre le capteur et le referentiel unique.
 
     # calcule la norme
-
     norme = LA.norm(vecacc)
 
     #creer le vecteur artificiel g
@@ -297,18 +242,17 @@ def alignemntG(vecacc):
     #calule la difference d'angle entre g et le vecteurs d'acceleration mesurer par le capteur. Logiquement les angles doivent s'aditionner.
     angleDiff = diffAngleVecteur(g,vecacc,50) 
 
-
     #comme c'est le premier point et que au début de la mesure, il faut pauser la capteur quelque seconde sans le bouger, alors nous pouvons dire que sa vitesse initial = 0. Comme on creer le referentiel avec ce point, pour ne pas me compliquer la vis, je dis que ce premier point est le point central de mon referentiel, le point (0,0,0). 
-
-    #creation d'un vecteur (0,0,0) pour pouvoir correctement completer les informations pour creer le premier point imu.
     vec0 = np.array([0,0,0])
-
 
     #creation de premier point imu
     return PointIMU(vec0,vec0,angleDiff)
 
 
+
+
 #######################################  creation Point GPS #####################################################################################
+
 
 
 
@@ -324,8 +268,8 @@ def creationPointGps (long, lat):
 
 
 
-
 #######################################  Point IMU to Point GPS #####################################################################################
+
 
 
 
@@ -352,7 +296,7 @@ def pointIMUtoGPS(point):
 
 
 
-#######################################  fonction  ######################################################################################
+#######################################  lire fichier  #####################################################################################################
 
 
 
@@ -388,6 +332,7 @@ def lireFichier(nom_fichier):
                 # Supprimer les espaces en début et en fin d objet
                 i = i.strip()
 
+                #ne prends que les donnees et les stocke dans la bonne liste
                 if i[:3] == "ax=" :
                     ni = i[3:]
                     liste1.append(ni)
@@ -420,10 +365,15 @@ def lireFichier(nom_fichier):
                     ni = i[4:]
                     liste8.append(ni)
 
+    #creer la liste donnee dans le bon ordre
+    for i in range(len(liste1)):
+        donne.append([float(liste1[i]),float(liste2[i]),float(liste3[i]),float(liste4[i])/360*(2*m.pi),float(liste5[i])/360*(2*m.pi),float(liste6[i])/360*(2*m.pi),float(liste7[i]),float(liste8[i])]) #/360*(2*m.pi)
 
-            
-        for i in range(len(liste1)):
-            donne.append([float(liste1[i]),float(liste2[i]),float(liste3[i]),float(liste4[i])/180*m.pi,float(liste5[i])/180*m.pi,float(liste6[i])/180*m.pi,float(liste7[i]),float(liste8[i])])
+
+
+
+########################################################## initialisation ##########################################################################################
+
 
 
 
@@ -435,16 +385,16 @@ def initialisation():
     #faire l'initialisation sans calibrage pour donner le point0
     alignemntG(np.array([donne[0][0],donne[0][1],donne[0][2]]))
 
-    print(PointIMU.point[0].t)
+    print("initialisation",PointIMU.point[0].t)
 
+    #permet d eviter de refaire alignementG plus bas
     stockeangle = PointIMU.point[0].t
-
 
     #variable qui compte le nombre de mesure passé, on commnece a 1 car l'initialisation a deja ete faite
     nombrePoint = 0
 
     #permet de creer les point uniquement jusqu il y aie un deplacement de 20 m. le but et de ne pas tout calculer mais d'avoir une distence assez grande pour pouvoir etre au dessus de l'incertitude du gps.
-    while LA.norm(PointIMU.point[nombrePoint].r[0:2])< 0.1:
+    while LA.norm(PointIMU.point[nombrePoint].r[0:2])< 1:
 
 
         #construit les vecteur d'acceleration et de vitesse angulaire pour la recurence
@@ -483,24 +433,25 @@ def initialisation():
     #donne la difference d'angle entre les deux vecteurs. C'est cette difference d'angle qui permettra d'alligner els point gps et les point imu.
     angle = diffAngleVecteur(vecteur2,vecteur4,100)
 
-    print("angle",angle)
+    print("initialisation , angle",angle)
 
 
     #comme tout les point imu doive etre corriger avec le nouvelle angle, il est plus simple d'effacer tout les point construit jusque la et recommnecer la creation de tout les point.
     PointGPS.point.clear()
     PointIMU.point.clear()
 
-    #creation du premier point pour la deuxieme fois
+    #corection de l'angle theta z
     stockeangle[2] + angle[2]
+
+    #creation du premier point pour la deuxieme fois
     premierPoint = PointIMU(np.array([0,0,0]),np.array([0,0,0]),stockeangle)
 
-    #correction de l'angle theta dans le point0, cela allignera les chemin du gps et celui de l'imu   ±???, attention, prendre que l'angle z, le reste est faux car se sont dans vecteur 2d passé artificiellement en 3d
-    print("avant",premierPoint.t)
+    print("initialisation, avant",premierPoint.t)
 
 
-    print(premierPoint.t)
 
-    
+
+############################################################# recurence ################################################################################
 
 
 
@@ -511,27 +462,28 @@ def recurence(pointIMU,vecteurAcc,vecteurAng):
     #en utilisant les equation horaires, avec le point de mesure, le vecteur acceleration et celui de la vitesse angulaire mesurer au point de mesure, il est physiquement possible de savoir ou se fera la prochaine mesure.
 
     # equation angulaire pour obtenir theta_n+1   //  new_t = theta n+1
-    newOmega = -vecteurAng*temps + pointIMU.t
-    newOmega[0] = newOmega[0]#%(2*m.pi)
-    newOmega[1] = newOmega[1]#%(2*m.pi)
-    newOmega[2] = newOmega[2]#%(2*m.pi)
     
-
+    newOmega = -vecteurAng*temps + pointIMU.t
+    print(f"recurence, base : {pointIMU.t},vecteurang{vecteurAng} iteration {-vecteurAng*temps}, total {newOmega}")
     # comme le capteur n est pas fixer a un rail, il peut faire des mouvements dotatif. Cela implique que il perd le referentiel de la mesure n-1. avec les equation angulaire, tetha et omega, cela permet de faire une projection du vecteur de le referentiel de mesure au referentiel unique.
 
     # passage de l'acceleration de l'IMU dans le referentiel unique
     accelUnique = rotate_vector_with_angle_and_axis(newOmega,vecteurAcc)
-    #accelUnique = rotationVecteur(vecteurAcc,newOmega)
     #accelUnique = vecteurAcc
 
-    print()
+    print("recurence")
+    print("recurence, vecteur acc : {0},norme {3}, vecteur corriger ; {1}, norme {2}".format(vecteurAcc,accelUnique,LA.norm(accelUnique),LA.norm(vecteurAcc)))
+    print("recurence")
 
     #comme cette acceleration mesure en permanence g, il faut l'enlever, mais comme g = -1, il faut faire +1
-    
-    print("recurence, vecteur acc : {0},norme {3}, vecteur corriger ; {1}, norme {2}".format(vecteurAcc,accelUnique,LA.norm(accelUnique),LA.norm(vecteurAcc)))
-    print( )
     accelUnique[2] = accelUnique[2]+1
+
+    #comme g != 1 mais 9.81, il faut multiplier toute l'acceleration par g
     accelUnique = 9.81*accelUnique
+
+    #permet de stocker ces acceleration
+    global accelerationglobale 
+    accelerationglobale = accelUnique
 
     #utilisation du vecteur d'acceleration projeter dans le referentiel unique pour deduire le prochain point.
 
@@ -541,6 +493,12 @@ def recurence(pointIMU,vecteurAcc,vecteurAng):
 
     #creation du point_n+1
     return PointIMU(new_r, new_v, newOmega)
+
+
+
+
+################################################################ creation graphe ########################################################
+
 
 
 
@@ -575,57 +533,90 @@ def creationGraphe():
 
 
 
+########################################################## plus moins ################################################################
+
+
+
+
+def plusmoins(ab,plus,moins):
+
+    if ab > 0 :
+
+        plus += 1
+    if ab < 0 :
+
+        moins += 1
+
+
+    return plus,moins
+
+
+
+
+########################################################## main ################################################################
 
 
 
 
 def main():
     #verifier, fonctionnel
-    lireFichier("test3.tex")
+    lireFichier("test.tex")
 
 
-    #permet de corrige le calibrage de l'imu
-    #calibrage()
+    #permet de corrige le calibrage des gyros
+    calibrage(2)
 
 
     #permet de creer le premier avec toute ces correction
     initialisation()
     #alignemntG(np.array([donne[0][0],donne[0][1],donne[0][2]]))
+    
+    #variable de stockage pour plusmoin et comprendre quand l'accélération est postive ou negative sur quelle axe
+    plusx,plusy,plusz = 0,0,0
+    moinsx,moinsy,moinsz = 0,0,0
+    aplusx,aplusy,aplusz = 0,0,0
+    amoinsx,amoinsy,amoinsz = 0,0,0
 
     #boucle qui crée tout les poin IMU par recurence et tout les point gps
-
     for a in range(len(donne)) :
         
+        #crer le vecteur acceleration pour l'iteration
         vecacc = np.array([donne[a][0],donne[a][1],donne[a][2]])
 
-        #attention,les angles sont en degrer
+        #creer le vecteur omega
         vecang = np.array([donne[a][3],donne[a][4],donne[a][5]])
 
+        #fait la recurence
         recurence(PointIMU.point[-1],vecacc,vecang)
-        print("main",PointIMU.point[-1])
 
-        
+        #comprendre les accélération
+        plusx,moinsx = plusmoins(accelerationglobale[0],plusx,moinsx)
+        plusy,moinsy = plusmoins(accelerationglobale[1],plusy,moinsy)
+        plusz,moinsz = plusmoins(accelerationglobale[2],plusz,moinsz)
+        aplusx,amoinsx = plusmoins(vecacc[0],aplusx,amoinsx)
+        aplusy,amoinsy = plusmoins(vecacc[1],aplusy,amoinsy)
+        aplusz,amoinsz = plusmoins(vecacc[2],aplusz,amoinsz)
 
+        print("main",PointIMU.point[-1])      
+
+        #si il n'y a pas de donnes gps sur cette iteration, prends la derniere donnes valide
         if donne[a][-2] > 2:
-
             creationPointGps(donne[a][-2],donne[a][-1])
+
         else :
             creationPointGps(PointGPS.point[a-1].r[0],PointGPS.point[a-1].r[0])
 
-    print(temps*len(PointIMU.point))
+    print("main",temps*len(PointIMU.point))
 
-    print(PointIMU.point[2].t-PointIMU.point[-1].t)
+    print(("main",PointIMU.point[4].t-PointIMU.point[-1].t))
 
-
-
+    print(f"mains,vecteur base x {amoinsx} , plus {aplusx} /// y {amoinsy} , plus {aplusy} ///  z {amoinsz} , plus {aplusz}")
+    print(f"main,vecteur unique x {moinsx} , plus {plusx} /// y {moinsy} , plus {plusy} ///  z {moinsz} , plus {plusz}")
 
     #creation du plan
     creationGraphe()
 
     
-
-    
-
 
 
 
