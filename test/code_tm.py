@@ -18,17 +18,13 @@ import math as m
 
 
 
-#constente du temps entre deux mesures
-temps = 0.12
-
-
 #liste donne, a organiser de cette magniere: [[t,accx....][t2,acc....]]
-#ordre de la liste dans la liste[accx,accy,accz,gyrox,giroy,giroz,lat,long]
+#ordre de la liste dans la liste[accx,accy,accz,gyrox,giroy,giroz,lat,long,temps]
 donne = []
 
 
 #variable de stockage pour la verification du signe de l acceleration corrigee
-accelerationglobale = 0
+accelerationglobale = []
 
 
 #######################################  class point  ######################################################################################
@@ -81,7 +77,7 @@ class PointGPS :
 
 
 
-def rotate_vector_with_angle_and_axis(axis, vector_to_rotate):
+def rotate_vector(axis, vector_to_rotate):
 
     """rotation d'un vecteur autour d'un vecteur angulaire"""
 
@@ -155,7 +151,7 @@ def diffAngleVecteur(vecteur1, vecteur2, precision):
                 vectorAngle = np.array([angleX,angleY,angleZ])
 
                 # calcule le vecteur en tournant avec les angles tests
-                f2 = rotate_vector_with_angle_and_axis(vectorAngle,vecteur2)
+                f2 = rotate_vector(vectorAngle,vecteur2)
 
                 # Calculez la norme de la différence entre f2 et g
                 diff_norm = LA.norm(f2-vecteur1)               
@@ -313,6 +309,7 @@ def lireFichier(nom_fichier):
     liste6 = []
     liste7 = []
     liste8 = []
+    liste9 = []
 
     
     # Ouvrir le fichier en mode lecture
@@ -364,10 +361,15 @@ def lireFichier(nom_fichier):
                 if i[:4] == "lon=" :
                     ni = i[4:]
                     liste8.append(ni)
+                
+                if i[:4] == "tem=" :
+                    ni = i[5:]
+                    liste9.append(ni)
+
 
     #creer la liste donnee dans le bon ordre
     for i in range(len(liste1)):
-        donne.append([float(liste1[i]),float(liste2[i]),float(liste3[i]),float(liste4[i])/360*(2*m.pi),float(liste5[i])/360*(2*m.pi),float(liste6[i])/360*(2*m.pi),float(liste7[i]),float(liste8[i])]) #/360*(2*m.pi)
+        donne.append([float(liste1[i]),float(liste2[i]),float(liste3[i]),-float(liste4[i])/360*(2*m.pi),float(liste5[i])/360*(2*m.pi),float(liste6[i])/360*(2*m.pi),float(liste7[i]),float(liste8[i]),float(liste9[i])/1000])
 
 
 
@@ -385,7 +387,7 @@ def initialisation():
     #faire l'initialisation sans calibrage pour donner le point0
     alignemntG(np.array([donne[0][0],donne[0][1],donne[0][2]]))
 
-    print("initialisation",PointIMU.point[0].t)
+    #print("initialisation",PointIMU.point[0].t)
 
     #permet d eviter de refaire alignementG plus bas
     stockeangle = PointIMU.point[0].t
@@ -394,7 +396,7 @@ def initialisation():
     nombrePoint = 0
 
     #permet de creer les point uniquement jusqu il y aie un deplacement de 20 m. le but et de ne pas tout calculer mais d'avoir une distence assez grande pour pouvoir etre au dessus de l'incertitude du gps.
-    while LA.norm(PointIMU.point[nombrePoint].r[0:2])< 1:
+    while LA.norm(PointIMU.point[nombrePoint].r[0:2])< 3:
 
 
         #construit les vecteur d'acceleration et de vitesse angulaire pour la recurence
@@ -402,7 +404,7 @@ def initialisation():
         vecvitang = np.array([donne[nombrePoint][3],donne[nombrePoint][4],donne[nombrePoint][5]])
 
         #construit le point IMU suivant. 
-        recurence(PointIMU.point[nombrePoint],vecacc,vecvitang)
+        recurence(PointIMU.point[nombrePoint],vecacc,vecvitang,donne[nombrePoint-1][8],donne[nombrePoint][8])
 
         # mets a jour la constente  
         nombrePoint += 1 
@@ -433,7 +435,7 @@ def initialisation():
     #donne la difference d'angle entre les deux vecteurs. C'est cette difference d'angle qui permettra d'alligner els point gps et les point imu.
     angle = diffAngleVecteur(vecteur2,vecteur4,100)
 
-    print("initialisation , angle",angle)
+    #print("initialisation , angle",angle)
 
 
     #comme tout les point imu doive etre corriger avec le nouvelle angle, il est plus simple d'effacer tout les point construit jusque la et recommnecer la creation de tout les point.
@@ -446,7 +448,8 @@ def initialisation():
     #creation du premier point pour la deuxieme fois
     premierPoint = PointIMU(np.array([0,0,0]),np.array([0,0,0]),stockeangle)
 
-    print("initialisation, avant",premierPoint.t)
+
+    print("initialisation",premierPoint)
 
 
 
@@ -456,24 +459,31 @@ def initialisation():
 
 
 
-def recurence(pointIMU,vecteurAcc,vecteurAng):
-    """passage entre n et n+1"""
+def recurence(pointIMU,vecteurAcc,vecteurAng,temps0,temps1):
+    """passage entre n et n+1, temps0 est plus petit que temps1"""
+
+
+    #calcule du delta t !!!milli seconde
+
+    temps = temps1-temps0
+
+    print(temps)
 
     #en utilisant les equation horaires, avec le point de mesure, le vecteur acceleration et celui de la vitesse angulaire mesurer au point de mesure, il est physiquement possible de savoir ou se fera la prochaine mesure.
 
     # equation angulaire pour obtenir theta_n+1   //  new_t = theta n+1
     
     newOmega = -vecteurAng*temps + pointIMU.t
-    print(f"recurence, base : {pointIMU.t},vecteurang{vecteurAng} iteration {-vecteurAng*temps}, total {newOmega}")
+    #print(f"recurence, base : {pointIMU.t},vecteurang{vecteurAng} iteration {-vecteurAng*temps}, total {newOmega}")
     # comme le capteur n est pas fixer a un rail, il peut faire des mouvements dotatif. Cela implique que il perd le referentiel de la mesure n-1. avec les equation angulaire, tetha et omega, cela permet de faire une projection du vecteur de le referentiel de mesure au referentiel unique.
 
     # passage de l'acceleration de l'IMU dans le referentiel unique
-    accelUnique = rotate_vector_with_angle_and_axis(newOmega,vecteurAcc)
+    accelUnique = rotate_vector(newOmega,vecteurAcc)
     #accelUnique = vecteurAcc
 
-    print("recurence")
+    #print("recurence")
     print("recurence, vecteur acc : {0},norme {3}, vecteur corriger ; {1}, norme {2}".format(vecteurAcc,accelUnique,LA.norm(accelUnique),LA.norm(vecteurAcc)))
-    print("recurence")
+    #print("recurence")
 
     #comme cette acceleration mesure en permanence g, il faut l'enlever, mais comme g = -1, il faut faire +1
     accelUnique[2] = accelUnique[2]+1
@@ -481,9 +491,7 @@ def recurence(pointIMU,vecteurAcc,vecteurAng):
     #comme g != 1 mais 9.81, il faut multiplier toute l'acceleration par g
     accelUnique = 9.81*accelUnique
 
-    #permet de stocker ces acceleration
-    global accelerationglobale 
-    accelerationglobale = accelUnique
+    accelerationglobale.append(accelUnique)
 
     #utilisation du vecteur d'acceleration projeter dans le referentiel unique pour deduire le prochain point.
 
@@ -533,35 +541,39 @@ def creationGraphe():
 
 
 
-########################################################## plus moins ################################################################
-
-
-
-
-def plusmoins(ab,plus,moins):
-
-    if ab > 0 :
-
-        plus += 1
-    if ab < 0 :
-
-        moins += 1
-
-
-    return plus,moins
-
-
-
-
 ########################################################## main ################################################################
 
+def sortiefich(nomfichier):
+    count = 0
+    with open(str(nomfichier), 'w') as outfile:
+        for i in range(len(donne)):
+            ax = donne[i][0]
+            ay = donne[i][1]
+            az = donne[i][2]
+            acx = accelerationglobale[i][0]
+            acy = accelerationglobale[i][1]
+            acz = accelerationglobale[i][2]
+            vx = PointIMU.point[i].v[0]
+            vy = PointIMU.point[i].v[1]
+            vz = PointIMU.point[i].v[2]
+            rx = PointIMU.point[i].r[0]
+            ry = PointIMU.point[i].r[1]
+            rz = PointIMU.point[i].r[2]
+            ox = donne[i][4]
+            oy = donne[i][5]
+            oz = donne[i][6]
+            tx = PointIMU.point[i].t[0]
+            ty = PointIMU.point[i].t[1]
+            tz = PointIMU.point[i].t[2]
+            temp = donne[i][-1]-donne[0][-1]
+            outfile.write(f"{temp}\t{ax}\t{ay}\t{az}\t{acx}\t{acy}\t{acz}\t{vx}\t{vy}\t{vz}\t{rx}\t{ry}\t{rz}\t{ox}\t{oy}\t{oz}\t{tx}\t{ty}\t{tz}\n")
+            count += 1
 
 
 
 def main():
     #verifier, fonctionnel
-    lireFichier("test.tex")
-
+    lireFichier("testreel.tex")
 
     #permet de corrige le calibrage des gyros
     calibrage(2)
@@ -571,31 +583,17 @@ def main():
     initialisation()
     #alignemntG(np.array([donne[0][0],donne[0][1],donne[0][2]]))
     
-    #variable de stockage pour plusmoin et comprendre quand l'accélération est postive ou negative sur quelle axe
-    plusx,plusy,plusz = 0,0,0
-    moinsx,moinsy,moinsz = 0,0,0
-    aplusx,aplusy,aplusz = 0,0,0
-    amoinsx,amoinsy,amoinsz = 0,0,0
-
     #boucle qui crée tout les poin IMU par recurence et tout les point gps
-    for a in range(len(donne)) :
+    for a in range(len(donne)-1) :
         
         #crer le vecteur acceleration pour l'iteration
-        vecacc = np.array([donne[a][0],donne[a][1],donne[a][2]])
+        vecacc = np.array([donne[a+1][0],donne[a+1][1],donne[a+1][2]])
 
         #creer le vecteur omega
-        vecang = np.array([donne[a][3],donne[a][4],donne[a][5]])
+        vecang = np.array([donne[a+1][3],donne[a+1][4],donne[a+1][5]])
 
         #fait la recurence
-        recurence(PointIMU.point[-1],vecacc,vecang)
-
-        #comprendre les accélération
-        plusx,moinsx = plusmoins(accelerationglobale[0],plusx,moinsx)
-        plusy,moinsy = plusmoins(accelerationglobale[1],plusy,moinsy)
-        plusz,moinsz = plusmoins(accelerationglobale[2],plusz,moinsz)
-        aplusx,amoinsx = plusmoins(vecacc[0],aplusx,amoinsx)
-        aplusy,amoinsy = plusmoins(vecacc[1],aplusy,amoinsy)
-        aplusz,amoinsz = plusmoins(vecacc[2],aplusz,amoinsz)
+        recurence(PointIMU.point[-1],vecacc,vecang,donne[a][8],donne[a+1][8])
 
         print("main",PointIMU.point[-1])      
 
@@ -606,15 +604,19 @@ def main():
         else :
             creationPointGps(PointGPS.point[a-1].r[0],PointGPS.point[a-1].r[0])
 
-    print("main",temps*len(PointIMU.point))
+    print("main",0.09*len(PointIMU.point))
 
-    print(("main",PointIMU.point[4].t-PointIMU.point[-1].t))
+    print(("main",PointIMU.point[3].t-PointIMU.point[-1].t))
 
-    print(f"mains,vecteur base x {amoinsx} , plus {aplusx} /// y {amoinsy} , plus {aplusy} ///  z {amoinsz} , plus {aplusz}")
-    print(f"main,vecteur unique x {moinsx} , plus {plusx} /// y {moinsy} , plus {plusy} ///  z {moinsz} , plus {plusz}")
+    #print(f"mains,vecteur base x {amoinsx} , plus {aplusx} /// y {amoinsy} , plus {aplusy} ///  z {amoinsz} , plus {aplusz}")
+    #print(f"main,vecteur unique x {moinsx} , plus {plusx} /// y {moinsy} , plus {plusy} ///  z {moinsz} , plus {plusz}")
 
     #creation du plan
     creationGraphe()
+
+    sortiefich("testreel.csv")
+
+    print((donne[-1][-1]-donne[1][-1])/len(donne))
 
     
 
